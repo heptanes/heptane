@@ -1,5 +1,3 @@
-# heptane
-
 HEPTANE - cacHEd disPerse Table bAckeNd framEwork
 =================================================
 
