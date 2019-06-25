@@ -26,4 +26,11 @@ The framework provides the following development tools:
 * Given an existing schema in the database provide, the framework is able to extract the table metadata.
 * The framework is able to migrate data between different database providers.
 
+Installation
+------------
+
+Using `go get` as usual:
+
+* `go get github.com/heptanes/heptane`
+* `import "github.com/heptanes/heptane"`
 
