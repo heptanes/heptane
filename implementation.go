@@ -15,6 +15,7 @@ type heptane struct {
 	f map[TableName]*info
 }
 
+// New returns a new instance of Heptane.
 func New() Heptane {
 	return &heptane{
 		sync.Mutex{},
@@ -22,10 +23,14 @@ func New() Heptane {
 	}
 }
 
-func (h *heptane) Register(t Table, rp RowProvider, cp CacheProvider) {
+func (h *heptane) Register(t Table, rp RowProvider, cp CacheProvider) error {
+	if rp == nil {
+		return NullRowProviderError{t.Name}
+	}
 	h.m.Lock()
 	defer h.m.Unlock()
 	h.f[t.Name] = &info{t, rp, cp}
+	return nil
 }
 
 func (h *heptane) Unregister(tn TableName) {
@@ -74,10 +79,7 @@ func (h *heptane) create(c Create) error {
 	tn := c.TableName
 	f := h.info(tn)
 	if f == nil {
-		return UnregisteredTableNameError{tn}
-	}
-	if f.RowProvider == nil {
-		return UnregisteredRowProviderError{tn}
+		return UnregisteredTableError{tn}
 	}
 	key, err := f.Table.cacheKey(c.FieldValues)
 	if err != nil {
@@ -112,7 +114,7 @@ func (h *heptane) retrieve(r *Retrieve) error {
 	tn := r.TableName
 	f := h.info(tn)
 	if f == nil {
-		return UnregisteredTableNameError{tn}
+		return UnregisteredTableError{tn}
 	}
 	if f.CacheProvider != nil && f.Table.PrimaryKeyCachePrefix != nil {
 		key, err := f.Table.cacheKey(r.FieldValues)
@@ -130,9 +132,6 @@ func (h *heptane) retrieve(r *Retrieve) error {
 				return nil
 			}
 		}
-	}
-	if f.RowProvider == nil {
-		return UnregisteredRowProviderError{tn}
 	}
 	rr := RowRetrieve{f.Table, r.FieldValues, nil}
 	if err := f.RowProvider.Access(&rr); err != nil {
@@ -175,10 +174,7 @@ func (h *heptane) update(u Update) error {
 	tn := u.TableName
 	f := h.info(tn)
 	if f == nil {
-		return UnregisteredTableNameError{tn}
-	}
-	if f.RowProvider == nil {
-		return UnregisteredRowProviderError{tn}
+		return UnregisteredTableError{tn}
 	}
 	key, err := f.Table.cacheKey(u.FieldValues)
 	if err != nil {
@@ -213,10 +209,7 @@ func (h *heptane) delete(d Delete) error {
 	tn := d.TableName
 	f := h.info(tn)
 	if f == nil {
-		return UnregisteredTableNameError{tn}
-	}
-	if f.RowProvider == nil {
-		return UnregisteredRowProviderError{tn}
+		return UnregisteredTableError{tn}
 	}
 	key, err := f.Table.cacheKey(d.FieldValues)
 	if err != nil {
