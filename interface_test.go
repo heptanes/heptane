@@ -11,7 +11,7 @@ func TestTableCanBeSerializedAsJson(t *testing.T) {
 		PartitionKey:          []FieldName{"bar"},
 		PrimaryKey:            []FieldName{"bar"},
 		Values:                []FieldName{"baz"},
-		Types:                 map[FieldName]FieldType{"bar": "string", "baz": "int"},
+		Types:                 FieldTypesByName{"bar": "string", "baz": "int"},
 		PrimaryKeyCachePrefix: []CacheKey{"foo_pk", "0"},
 	}
 	if b, err := json.Marshal(r); err != nil {
