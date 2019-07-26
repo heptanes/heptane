@@ -174,7 +174,7 @@ type Delete struct {
 type Heptane interface {
 	// Register creates and updates a mapping between a TableName and its
 	// specification: the Table, RowProvider and CacheProvider.
-	Register(Table, RowProvider, CacheProvider)
+	Register(Table, RowProvider, CacheProvider) error
 	// Unregister deletes the mapping between the given Tablename and its
 	// specification.
 	Unregister(TableName)

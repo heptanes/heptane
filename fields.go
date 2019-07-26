@@ -3,7 +3,7 @@ package heptane
 func (t Table) marshal(fn FieldName, fv FieldValue) ([]byte, error) {
 	ft, ok := t.Types[fn]
 	if !ok {
-		return nil, UndefinedFieldTypeError{t.Name, fn}
+		return nil, MissingFieldTypeError{t.Name, fn}
 	}
 	switch ft {
 	case "string":
@@ -22,7 +22,7 @@ func (t Table) marshal(fn FieldName, fv FieldValue) ([]byte, error) {
 func (t Table) unmarshal(fn FieldName, q []byte) (FieldValue, error) {
 	ft, ok := t.Types[fn]
 	if !ok {
-		return nil, UndefinedFieldTypeError{t.Name, fn}
+		return nil, MissingFieldTypeError{t.Name, fn}
 	}
 	switch ft {
 	case "string":
@@ -42,7 +42,7 @@ func (t Table) cacheKey(fvn FieldValuesByName) (cacheKey, error) {
 	for _, fn := range t.PrimaryKey {
 		fv, ok := fvn[fn]
 		if !ok {
-			return nil, UndefinedFieldValueError{fn, fvn}
+			return nil, MissingFieldValueError{t.Name, fn, fvn}
 		}
 		v, err := t.marshal(fn, fv)
 		if err != nil {
@@ -90,8 +90,7 @@ func (t Table) unmarshalRow(cv cacheValue) (FieldValuesByName, error) {
 
 func (t Table) isMissingSomeValue(fvn FieldValuesByName) bool {
 	for _, fn := range t.Values {
-		_, ok := fvn[fn]
-		if !ok {
+		if _, ok := fvn[fn]; !ok {
 			return true
 		}
 	}

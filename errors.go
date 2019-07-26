@@ -2,24 +2,24 @@ package heptane
 
 import "fmt"
 
-// UnregisteredTableNameError is produced when an Access is tried on a
+// UnregisteredTableError is produced when an Access is tried on a
 // TableName that has not been registered.
-type UnregisteredTableNameError struct {
+type UnregisteredTableError struct {
 	TableName TableName
 }
 
-func (e UnregisteredTableNameError) Error() string {
+func (e UnregisteredTableError) Error() string {
 	return fmt.Sprintf("Unregistered TableName %v", e.TableName)
 }
 
-// UnregisteredRowProviderError is produced when an Access is tried on a
-// TableName that has been registered but its RowProvider is nil.
-type UnregisteredRowProviderError struct {
+// NullRowProviderError is produced when a Table is registered with a nil
+// RowProvider.
+type NullRowProviderError struct {
 	TableName TableName
 }
 
-func (e UnregisteredRowProviderError) Error() string {
-	return fmt.Sprintf("Unregistered RowProvider for TableName %v", e.TableName)
+func (e NullRowProviderError) Error() string {
+	return fmt.Sprintf("Null RowProvider for TableName %v", e.TableName)
 }
 
 // RowProviderAccessError is produced when a RowProvider returns an error for a
@@ -75,26 +75,27 @@ func (e UnsupportedFieldValueError) Error() string {
 	return fmt.Sprintf("Unsupported FieldValue for FieldType %v: %v", e.FieldType, e.FieldValue)
 }
 
-// UndefinedFieldTypeError is produced when the a FieldType has not been found
-// in the FieldTypesByName for a given FieldName.
-type UndefinedFieldTypeError struct {
+// MissingFieldTypeError is produced when a Table does not define a FieldType
+// for the given FieldName.
+type MissingFieldTypeError struct {
 	TableName TableName
 	FieldName FieldName
 }
 
-func (e UndefinedFieldTypeError) Error() string {
-	return fmt.Sprintf("Undefined FieldType for %v.%v", e.TableName, e.FieldName)
+func (e MissingFieldTypeError) Error() string {
+	return fmt.Sprintf("Missing FieldType for Table %v: %v", e.TableName, e.FieldName)
 }
 
-// UndefinedFieldValueError is produced when a mandatory FieldValue has not
-// been found for a given FieldName, i.e. a field for a primary key.
-type UndefinedFieldValueError struct {
+// MissingFieldValueError is produced when a Table defines a FieldName that has
+// no value in a FieldValuesByName.
+type MissingFieldValueError struct {
+	TableName         TableName
 	FieldName         FieldName
 	FieldValuesByName FieldValuesByName
 }
 
-func (e UndefinedFieldValueError) Error() string {
-	return fmt.Sprintf("Undefined FieldValue for %v in %v", e.FieldName, e.FieldValuesByName)
+func (e MissingFieldValueError) Error() string {
+	return fmt.Sprintf("Missing FieldValue for Field %v.%v: %v", e.TableName, e.FieldName, e.FieldValuesByName)
 }
 
 // MultipleErrors encapsulates one or more errors typically produced
