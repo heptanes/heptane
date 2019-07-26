@@ -4,12 +4,12 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/heptanes/heptane"
+	c "github.com/heptanes/heptane/cache"
 )
 
 func TestAccess_Unsupported_Get(t *testing.T) {
 	p := Cache{}
-	a := heptane.CacheGet{Key: "foo"}
+	a := c.CacheGet{Key: "foo"}
 	err := p.Access(a)
 	if err == nil {
 		t.Fatal(err)
@@ -21,7 +21,7 @@ func TestAccess_Unsupported_Get(t *testing.T) {
 
 func TestAccess_Unmocked_Get(t *testing.T) {
 	p := Cache{}
-	a := &heptane.CacheGet{Key: "foo"}
+	a := &c.CacheGet{Key: "foo"}
 	err := p.Access(a)
 	if err == nil {
 		t.Fatal(err)
@@ -33,9 +33,9 @@ func TestAccess_Unmocked_Get(t *testing.T) {
 
 func TestAccess_NormalMocked_Get(t *testing.T) {
 	p := Cache{}
-	p.Mock(heptane.CacheGet{Key: "bogus", Value: []byte("bogus")}, errors.New("bogus"))
-	p.Mock(heptane.CacheGet{Key: "foo", Value: []byte("bar")}, errors.New("baz"))
-	a := &heptane.CacheGet{Key: "foo"}
+	p.Mock(c.CacheGet{Key: "bogus", Value: []byte("bogus")}, errors.New("bogus"))
+	p.Mock(c.CacheGet{Key: "foo", Value: []byte("bar")}, errors.New("baz"))
+	a := &c.CacheGet{Key: "foo"}
 	err := p.Access(a)
 	if err == nil {
 		t.Fatal(err)
@@ -50,9 +50,9 @@ func TestAccess_NormalMocked_Get(t *testing.T) {
 
 func TestAccess_RefMocked_Get(t *testing.T) {
 	p := Cache{}
-	p.Mock(&heptane.CacheGet{Key: "bogus", Value: []byte("bogus")}, errors.New("bogus"))
-	p.Mock(&heptane.CacheGet{Key: "foo", Value: []byte("bar")}, errors.New("baz"))
-	a := &heptane.CacheGet{Key: "foo"}
+	p.Mock(&c.CacheGet{Key: "bogus", Value: []byte("bogus")}, errors.New("bogus"))
+	p.Mock(&c.CacheGet{Key: "foo", Value: []byte("bar")}, errors.New("baz"))
+	a := &c.CacheGet{Key: "foo"}
 	err := p.Access(a)
 	if err == nil {
 		t.Fatal(err)
@@ -67,7 +67,7 @@ func TestAccess_RefMocked_Get(t *testing.T) {
 
 func TestAccess_Unmocked_NormalSet(t *testing.T) {
 	p := Cache{}
-	a := heptane.CacheSet{Key: "foo", Value: []byte("bar")}
+	a := c.CacheSet{Key: "foo", Value: []byte("bar")}
 	err := p.Access(a)
 	if err == nil {
 		t.Fatal(err)
@@ -79,10 +79,10 @@ func TestAccess_Unmocked_NormalSet(t *testing.T) {
 
 func TestAccess_NormalMocked_NormalSet(t *testing.T) {
 	p := Cache{}
-	p.Mock(heptane.CacheSet{Key: "bogus", Value: []byte("baz")}, errors.New("bogus"))
-	p.Mock(heptane.CacheSet{Key: "foo", Value: []byte("bogus")}, errors.New("bogus"))
-	p.Mock(heptane.CacheSet{Key: "foo", Value: []byte("bar")}, errors.New("baz"))
-	a := heptane.CacheSet{Key: "foo", Value: []byte("bar")}
+	p.Mock(c.CacheSet{Key: "bogus", Value: []byte("baz")}, errors.New("bogus"))
+	p.Mock(c.CacheSet{Key: "foo", Value: []byte("bogus")}, errors.New("bogus"))
+	p.Mock(c.CacheSet{Key: "foo", Value: []byte("bar")}, errors.New("baz"))
+	a := c.CacheSet{Key: "foo", Value: []byte("bar")}
 	err := p.Access(a)
 	if err == nil {
 		t.Fatal(err)
@@ -94,10 +94,10 @@ func TestAccess_NormalMocked_NormalSet(t *testing.T) {
 
 func TestAccess_RefMocked_NormalSet(t *testing.T) {
 	p := Cache{}
-	p.Mock(&heptane.CacheSet{Key: "bogus", Value: []byte("baz")}, errors.New("bogus"))
-	p.Mock(&heptane.CacheSet{Key: "foo", Value: []byte("bogus")}, errors.New("bogus"))
-	p.Mock(&heptane.CacheSet{Key: "foo", Value: []byte("bar")}, errors.New("baz"))
-	a := heptane.CacheSet{Key: "foo", Value: []byte("bar")}
+	p.Mock(&c.CacheSet{Key: "bogus", Value: []byte("baz")}, errors.New("bogus"))
+	p.Mock(&c.CacheSet{Key: "foo", Value: []byte("bogus")}, errors.New("bogus"))
+	p.Mock(&c.CacheSet{Key: "foo", Value: []byte("bar")}, errors.New("baz"))
+	a := c.CacheSet{Key: "foo", Value: []byte("bar")}
 	err := p.Access(a)
 	if err == nil {
 		t.Fatal(err)
@@ -109,10 +109,10 @@ func TestAccess_RefMocked_NormalSet(t *testing.T) {
 
 func TestAccess_NormalMocked_RefSet(t *testing.T) {
 	p := Cache{}
-	p.Mock(heptane.CacheSet{Key: "bogus", Value: []byte("baz")}, errors.New("bogus"))
-	p.Mock(heptane.CacheSet{Key: "foo", Value: []byte("bogus")}, errors.New("bogus"))
-	p.Mock(heptane.CacheSet{Key: "foo", Value: []byte("bar")}, errors.New("baz"))
-	a := &heptane.CacheSet{Key: "foo", Value: []byte("bar")}
+	p.Mock(c.CacheSet{Key: "bogus", Value: []byte("baz")}, errors.New("bogus"))
+	p.Mock(c.CacheSet{Key: "foo", Value: []byte("bogus")}, errors.New("bogus"))
+	p.Mock(c.CacheSet{Key: "foo", Value: []byte("bar")}, errors.New("baz"))
+	a := &c.CacheSet{Key: "foo", Value: []byte("bar")}
 	err := p.Access(a)
 	if err == nil {
 		t.Fatal(err)
@@ -124,10 +124,10 @@ func TestAccess_NormalMocked_RefSet(t *testing.T) {
 
 func TestAccess_RefMocked_RefSet(t *testing.T) {
 	p := Cache{}
-	p.Mock(&heptane.CacheSet{Key: "bogus", Value: []byte("baz")}, errors.New("bogus"))
-	p.Mock(&heptane.CacheSet{Key: "foo", Value: []byte("bogus")}, errors.New("bogus"))
-	p.Mock(&heptane.CacheSet{Key: "foo", Value: []byte("bar")}, errors.New("baz"))
-	a := &heptane.CacheSet{Key: "foo", Value: []byte("bar")}
+	p.Mock(&c.CacheSet{Key: "bogus", Value: []byte("baz")}, errors.New("bogus"))
+	p.Mock(&c.CacheSet{Key: "foo", Value: []byte("bogus")}, errors.New("bogus"))
+	p.Mock(&c.CacheSet{Key: "foo", Value: []byte("bar")}, errors.New("baz"))
+	a := &c.CacheSet{Key: "foo", Value: []byte("bar")}
 	err := p.Access(a)
 	if err == nil {
 		t.Fatal(err)
@@ -139,8 +139,8 @@ func TestAccess_RefMocked_RefSet(t *testing.T) {
 
 func TestAccessSlice(t *testing.T) {
 	p := Cache{}
-	a := heptane.CacheSet{Key: "foo", Value: []byte("bar")}
-	errs := p.AccessSlice([]heptane.CacheAccess{a})
+	a := c.CacheSet{Key: "foo", Value: []byte("bar")}
+	errs := p.AccessSlice([]c.CacheAccess{a})
 	if errs == nil {
 		t.Error(errs)
 	}

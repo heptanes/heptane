@@ -1,6 +1,7 @@
 package heptane
 
 import (
+	"encoding/json"
 	"testing"
 )
 
@@ -11,7 +12,23 @@ func TestingTable() Table {
 		PrimaryKey:            []FieldName{"foo", "bar"},
 		Values:                []FieldName{"baz"},
 		Types:                 FieldTypesByName{"foo": "string", "bar": "string", "baz": "string"},
-		PrimaryKeyCachePrefix: []CacheKey{"table_pk", "0"},
+		PrimaryKeyCachePrefix: []string{"table_pk", "0"},
+	}
+}
+
+func TestTable_Json(t *testing.T) {
+	r := Table{
+		Name:                  "foo",
+		PartitionKey:          []FieldName{"bar"},
+		PrimaryKey:            []FieldName{"bar"},
+		Values:                []FieldName{"baz"},
+		Types:                 FieldTypesByName{"bar": "string", "baz": "int"},
+		PrimaryKeyCachePrefix: []string{"foo_pk", "0"},
+	}
+	if b, err := json.Marshal(r); err != nil {
+		t.Fatal(err)
+	} else if s := string(b); s != `{"name":"foo","partitionKey":["bar"],"primaryKey":["bar"],"values":["baz"],"types":{"bar":"string","baz":"int"},"primaryKeyCachePrefix":["foo_pk","0"]}` {
+		t.Error(s)
 	}
 }
 

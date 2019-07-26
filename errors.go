@@ -1,11 +1,16 @@
 package heptane
 
-import "fmt"
+import (
+	"fmt"
+
+	c "github.com/heptanes/heptane/cache"
+	r "github.com/heptanes/heptane/row"
+)
 
 // UnregisteredTableError is produced when an Access is tried on a
 // TableName that has not been registered.
 type UnregisteredTableError struct {
-	TableName TableName
+	TableName r.TableName
 }
 
 func (e UnregisteredTableError) Error() string {
@@ -15,7 +20,7 @@ func (e UnregisteredTableError) Error() string {
 // NullRowProviderError is produced when a Table is registered with a nil
 // RowProvider.
 type NullRowProviderError struct {
-	TableName TableName
+	TableName r.TableName
 }
 
 func (e NullRowProviderError) Error() string {
@@ -25,7 +30,7 @@ func (e NullRowProviderError) Error() string {
 // RowProviderAccessError is produced when a RowProvider returns an error for a
 // given RowAccess.
 type RowProviderAccessError struct {
-	Access RowAccess
+	Access r.RowAccess
 	Err    error
 }
 
@@ -36,7 +41,7 @@ func (e RowProviderAccessError) Error() string {
 // CacheProviderAccessError is produced when a CacheProvider returns an error
 // for a given CacheAccess.
 type CacheProviderAccessError struct {
-	Access CacheAccess
+	Access c.CacheAccess
 	Err    error
 }
 
@@ -57,7 +62,7 @@ func (e UnsupportedAccessTypeError) Error() string {
 // UnsupportedFieldTypeError is produced when a FieldType is not supported.
 // Current supported values are "string".
 type UnsupportedFieldTypeError struct {
-	FieldType FieldType
+	FieldType r.FieldType
 }
 
 func (e UnsupportedFieldTypeError) Error() string {
@@ -67,8 +72,8 @@ func (e UnsupportedFieldTypeError) Error() string {
 // UnsupportedFieldValueError is produced when the type of a FieldValue does
 // not match the corresponding FieldType.
 type UnsupportedFieldValueError struct {
-	FieldType  FieldType
-	FieldValue FieldValue
+	FieldType  r.FieldType
+	FieldValue r.FieldValue
 }
 
 func (e UnsupportedFieldValueError) Error() string {
@@ -78,8 +83,8 @@ func (e UnsupportedFieldValueError) Error() string {
 // MissingFieldTypeError is produced when a Table does not define a FieldType
 // for the given FieldName.
 type MissingFieldTypeError struct {
-	TableName TableName
-	FieldName FieldName
+	TableName r.TableName
+	FieldName r.FieldName
 }
 
 func (e MissingFieldTypeError) Error() string {
@@ -89,9 +94,9 @@ func (e MissingFieldTypeError) Error() string {
 // MissingFieldValueError is produced when a Table defines a FieldName that has
 // no value in a FieldValuesByName.
 type MissingFieldValueError struct {
-	TableName         TableName
-	FieldName         FieldName
-	FieldValuesByName FieldValuesByName
+	TableName         r.TableName
+	FieldName         r.FieldName
+	FieldValuesByName r.FieldValuesByName
 }
 
 func (e MissingFieldValueError) Error() string {
