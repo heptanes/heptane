@@ -120,6 +120,21 @@ func TestHeptane_Create_OK_NotNullValue(t *testing.T) {
 	}
 }
 
+func TestHeptane_Create_OK_Multiplevalues(t *testing.T) {
+	h := New()
+	b := TestingTable1()
+	b.Values = []r.FieldName{"baz", "qux"}
+	b.Types = r.FieldTypesByName{"foo": "string", "bar": "string", "baz": "string", "qux": "string"}
+	rm := &rm.Row{}
+	if err := h.Register(b, rm, nil); err != nil {
+		t.Error(err)
+	}
+	rm.Mock(r.RowCreate{Table: b, FieldValues: r.FieldValuesByName{"foo": "1", "bar": "2", "baz": "3", "qux": "4"}}, nil)
+	if err := h.Access(Create{b.Name, r.FieldValuesByName{"foo": "1", "bar": "2", "baz": "3", "qux": "4"}}); err != nil {
+		t.Error(err)
+	}
+}
+
 func TestHeptane_Create_WithCache_CacheAccessError(t *testing.T) {
 	h := New()
 	b := TestingTable1()
@@ -129,10 +144,10 @@ func TestHeptane_Create_WithCache_CacheAccessError(t *testing.T) {
 		t.Error(err)
 	}
 	rm.Mock(r.RowCreate{Table: b, FieldValues: r.FieldValuesByName{"foo": "1", "bar": "2"}}, nil)
-	cm.Mock(c.CacheSet{Key: "table1_pk#0#1#2#", Value: c.CacheValue("#")}, errors.New("problem1"))
+	cm.Mock(c.CacheSet{Key: "table1_pk#0#s1#s2", Value: c.CacheValue("")}, errors.New("problem1"))
 	if err := h.Access(Create{b.Name, r.FieldValuesByName{"foo": "1", "bar": "2"}}); err == nil {
 		t.Error(err)
-	} else if s := err.Error(); s != `heptane.CacheSet{Key:"table1_pk#0#1#2#", Value:heptane.CacheValue{0x23}} Error: problem1` {
+	} else if s := err.Error(); s != `heptane.CacheSet{Key:"table1_pk#0#s1#s2", Value:heptane.CacheValue{}} Error: problem1` {
 		t.Error(s)
 	}
 }
@@ -146,7 +161,7 @@ func TestHeptane_Create_WithCache_OK_MissingValue(t *testing.T) {
 		t.Error(err)
 	}
 	rm.Mock(r.RowCreate{Table: b, FieldValues: r.FieldValuesByName{"foo": "1", "bar": "2"}}, nil)
-	cm.Mock(c.CacheSet{Key: "table1_pk#0#1#2#", Value: c.CacheValue("#")}, nil)
+	cm.Mock(c.CacheSet{Key: "table1_pk#0#s1#s2", Value: c.CacheValue("")}, nil)
 	if err := h.Access(Create{b.Name, r.FieldValuesByName{"foo": "1", "bar": "2"}}); err != nil {
 		t.Error(err)
 	}
@@ -161,7 +176,7 @@ func TestHeptane_Create_WithCache_OK_NullValue(t *testing.T) {
 		t.Error(err)
 	}
 	rm.Mock(r.RowCreate{Table: b, FieldValues: r.FieldValuesByName{"foo": "1", "bar": "2", "baz": nil}}, nil)
-	cm.Mock(c.CacheSet{Key: "table1_pk#0#1#2#", Value: c.CacheValue("#")}, nil)
+	cm.Mock(c.CacheSet{Key: "table1_pk#0#s1#s2", Value: c.CacheValue("")}, nil)
 	if err := h.Access(Create{b.Name, r.FieldValuesByName{"foo": "1", "bar": "2", "baz": nil}}); err != nil {
 		t.Error(err)
 	}
@@ -176,8 +191,59 @@ func TestHeptane_Create_WithCache_OK_NotNullValue(t *testing.T) {
 		t.Error(err)
 	}
 	rm.Mock(r.RowCreate{Table: b, FieldValues: r.FieldValuesByName{"foo": "1", "bar": "2", "baz": "3"}}, nil)
-	cm.Mock(c.CacheSet{Key: "table1_pk#0#1#2#", Value: c.CacheValue("3#")}, nil)
+	cm.Mock(c.CacheSet{Key: "table1_pk#0#s1#s2", Value: c.CacheValue("s3")}, nil)
 	if err := h.Access(Create{b.Name, r.FieldValuesByName{"foo": "1", "bar": "2", "baz": "3"}}); err != nil {
+		t.Error(err)
+	}
+}
+
+func TestHeptane_Create_WithCache_OK_MultipleValues_1(t *testing.T) {
+	h := New()
+	b := TestingTable1()
+	b.Values = []r.FieldName{"baz", "qux"}
+	b.Types = r.FieldTypesByName{"foo": "string", "bar": "string", "baz": "string", "qux": "string"}
+	rm := &rm.Row{}
+	cm := &cm.Cache{}
+	if err := h.Register(b, rm, cm); err != nil {
+		t.Error(err)
+	}
+	rm.Mock(r.RowCreate{Table: b, FieldValues: r.FieldValuesByName{"foo": "1", "bar": "2"}}, nil)
+	cm.Mock(c.CacheSet{Key: "table1_pk#0#s1#s2", Value: c.CacheValue("#")}, nil)
+	if err := h.Access(Create{b.Name, r.FieldValuesByName{"foo": "1", "bar": "2"}}); err != nil {
+		t.Error(err)
+	}
+}
+
+func TestHeptane_Create_WithCache_OK_MultipleValues_2(t *testing.T) {
+	h := New()
+	b := TestingTable1()
+	b.Values = []r.FieldName{"baz", "qux"}
+	b.Types = r.FieldTypesByName{"foo": "string", "bar": "string", "baz": "string", "qux": "string"}
+	rm := &rm.Row{}
+	cm := &cm.Cache{}
+	if err := h.Register(b, rm, cm); err != nil {
+		t.Error(err)
+	}
+	rm.Mock(r.RowCreate{Table: b, FieldValues: r.FieldValuesByName{"foo": "1", "bar": "2", "baz": "3"}}, nil)
+	cm.Mock(c.CacheSet{Key: "table1_pk#0#s1#s2", Value: c.CacheValue("s3#")}, nil)
+	if err := h.Access(Create{b.Name, r.FieldValuesByName{"foo": "1", "bar": "2", "baz": "3"}}); err != nil {
+		t.Error(err)
+	}
+}
+
+func TestHeptane_Create_WithCache_OK_MultipleValues_3(t *testing.T) {
+	h := New()
+	b := TestingTable1()
+	b.Values = []r.FieldName{"baz", "qux"}
+	b.Types = r.FieldTypesByName{"foo": "string", "bar": "string", "baz": "string", "qux": "string"}
+	rm := &rm.Row{}
+	cm := &cm.Cache{}
+	if err := h.Register(b, rm, cm); err != nil {
+		t.Error(err)
+	}
+	rm.Mock(r.RowCreate{Table: b, FieldValues: r.FieldValuesByName{"foo": "1", "bar": "2", "qux": "4"}}, nil)
+	cm.Mock(c.CacheSet{Key: "table1_pk#0#s1#s2", Value: c.CacheValue("#s4")}, nil)
+	if err := h.Access(Create{b.Name, r.FieldValuesByName{"foo": "1", "bar": "2", "qux": "4"}}); err != nil {
 		t.Error(err)
 	}
 }

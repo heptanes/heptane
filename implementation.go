@@ -115,22 +115,30 @@ func (h *heptane) retrieve(a *Retrieve) error {
 	if f == nil {
 		return UnregisteredTableError{tn}
 	}
-	if f.CacheProvider != nil && f.Table.PrimaryKeyCachePrefix != nil {
-		key, err := decodePrimaryKey(f.Table, a.FieldValues)
-		if err == nil {
-			cg := c.CacheGet{Key: key.key()}
-			if err := f.CacheProvider.Access(&cg); err != nil {
-				return CacheProviderAccessError{cg, err}
-			}
-			cv := split(cg.Value)
-			v, err := unmarshalRow(f.Table, cv)
-			if err != nil {
-				return err
-			}
-			if v != nil {
-				a.RetrievedValues = []r.FieldValuesByName{v}
-				return nil
-			}
+	if err := decodePartitionKey(f.Table, a.FieldValues); err != nil {
+		return err
+	}
+	key, err := decodePrimaryKey(f.Table, a.FieldValues)
+	if err != nil {
+		switch err.(type) {
+		case MissingFieldValueError:
+		default:
+			return err
+		}
+	}
+	if f.CacheProvider != nil && f.Table.PrimaryKeyCachePrefix != nil && err == nil {
+		cg := c.CacheGet{Key: key.key()}
+		if err := f.CacheProvider.Access(&cg); err != nil {
+			return CacheProviderAccessError{cg, err}
+		}
+		cv := split(cg.Value)
+		v, err := encode(f.Table, a.FieldValues, cv)
+		if err != nil {
+			return err
+		}
+		if v != nil {
+			a.RetrievedValues = []r.FieldValuesByName{v}
+			return nil
 		}
 	}
 	rr := r.RowRetrieve{Table: f.Table, FieldValues: a.FieldValues}
@@ -138,34 +146,36 @@ func (h *heptane) retrieve(a *Retrieve) error {
 		return RowProviderAccessError{rr, err}
 	}
 	a.RetrievedValues = rr.RetrievedValues
-	css := make([]c.CacheAccess, len(rr.RetrievedValues), 0)
-	for _, rv := range rr.RetrievedValues {
-		key, err := decodePrimaryKey(f.Table, rv)
-		if err != nil {
-			return err
-		}
-		value, err := decodeValue(f.Table, rv)
-		if err != nil {
-			return err
-		}
-		cs := c.CacheSet{Key: key.key(), Value: value.value()}
-		css = append(css, cs)
-	}
-	errs := f.CacheProvider.AccessSlice(css)
-	nnerrs := []error(nil)
-	for i, err := range errs {
-		if err != nil {
-			if nnerrs == nil {
-				nnerrs = make([]error, len(errs), 0)
+	if f.CacheProvider != nil && f.Table.PrimaryKeyCachePrefix != nil {
+		css := make([]c.CacheAccess, 0, len(rr.RetrievedValues))
+		for _, rv := range rr.RetrievedValues {
+			key, err := decodePrimaryKey(f.Table, rv)
+			if err != nil {
+				return err
 			}
-			nnerrs = append(nnerrs, CacheProviderAccessError{css[i], err})
+			value, err := decodeValue(f.Table, rv)
+			if err != nil {
+				return err
+			}
+			cs := c.CacheSet{Key: key.key(), Value: value.value()}
+			css = append(css, cs)
 		}
-	}
-	if len(nnerrs) > 0 {
-		if len(nnerrs) == 1 {
-			return nnerrs[0]
+		errs := f.CacheProvider.AccessSlice(css)
+		nnerrs := []error(nil)
+		for i, err := range errs {
+			if err != nil {
+				if nnerrs == nil {
+					nnerrs = make([]error, 0, len(errs))
+				}
+				nnerrs = append(nnerrs, CacheProviderAccessError{css[i], err})
+			}
 		}
-		return MultipleErrors{nnerrs}
+		if len(nnerrs) > 0 {
+			if len(nnerrs) == 1 {
+				return nnerrs[0]
+			}
+			return MultipleErrors{nnerrs}
+		}
 	}
 	return nil
 }
@@ -222,7 +232,8 @@ func (h *heptane) delete(a Delete) error {
 	if f.CacheProvider == nil || f.Table.PrimaryKeyCachePrefix == nil {
 		return nil
 	}
-	cs := c.CacheSet{Key: key.key(), Value: cacheValue{}.value()}
+	value := cacheValue(nil)
+	cs := c.CacheSet{Key: key.key(), Value: value.value()}
 	if err := f.CacheProvider.Access(cs); err != nil {
 		return CacheProviderAccessError{cs, err}
 	}

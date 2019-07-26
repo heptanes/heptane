@@ -1,7 +1,6 @@
 package heptane
 
 import (
-	"bytes"
 	"fmt"
 
 	c "github.com/heptanes/heptane/cache"
@@ -55,7 +54,7 @@ func (p *Cache) Access(a c.CacheAccess) error {
 				if s.Key != a.Key {
 					continue
 				}
-				if !bytes.Equal(s.Value, a.Value) {
+				if fmt.Sprintf("%#v", s.Value) != fmt.Sprintf("%#v", a.Value) {
 					continue
 				}
 				return b.e

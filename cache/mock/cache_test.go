@@ -137,6 +137,66 @@ func TestAccess_RefMocked_RefSet(t *testing.T) {
 	}
 }
 
+func TestAccess_RefMocked_RefSet_EmptyValue(t *testing.T) {
+	p := Cache{}
+	p.Mock(&c.CacheSet{Key: "bogus", Value: []byte("baz")}, errors.New("bogus"))
+	p.Mock(&c.CacheSet{Key: "foo", Value: []byte("bogus")}, errors.New("bogus"))
+	p.Mock(&c.CacheSet{Key: "foo", Value: []byte("")}, errors.New("baz"))
+	a := &c.CacheSet{Key: "foo", Value: []byte("")}
+	err := p.Access(a)
+	if err == nil {
+		t.Fatal(err)
+	}
+	if s := err.Error(); s != `baz` {
+		t.Error(s)
+	}
+}
+
+func TestAccess_RefMocked_RefSet_NullValue(t *testing.T) {
+	p := Cache{}
+	p.Mock(&c.CacheSet{Key: "bogus", Value: []byte("baz")}, errors.New("bogus"))
+	p.Mock(&c.CacheSet{Key: "foo", Value: []byte("bogus")}, errors.New("bogus"))
+	p.Mock(&c.CacheSet{Key: "foo", Value: []byte(nil)}, errors.New("baz"))
+	a := &c.CacheSet{Key: "foo", Value: []byte(nil)}
+	err := p.Access(a)
+	if err == nil {
+		t.Fatal(err)
+	}
+	if s := err.Error(); s != `baz` {
+		t.Error(s)
+	}
+}
+
+func TestAccess_RefMocked_RefSet_EmptyValue_IsNot_NullValue(t *testing.T) {
+	p := Cache{}
+	p.Mock(&c.CacheSet{Key: "bogus", Value: []byte("baz")}, errors.New("bogus"))
+	p.Mock(&c.CacheSet{Key: "foo", Value: []byte("bogus")}, errors.New("bogus"))
+	p.Mock(&c.CacheSet{Key: "foo", Value: []byte(nil)}, errors.New("baz"))
+	a := &c.CacheSet{Key: "foo", Value: []byte("")}
+	err := p.Access(a)
+	if err == nil {
+		t.Fatal(err)
+	}
+	if s := err.Error(); s != `Not Mocked: heptane.CacheSet{Key:"foo", Value:heptane.CacheValue{}}` {
+		t.Error(s)
+	}
+}
+
+func TestAccess_RefMocked_RefSet_NullValue_IsNot_EmptyValue(t *testing.T) {
+	p := Cache{}
+	p.Mock(&c.CacheSet{Key: "bogus", Value: []byte("baz")}, errors.New("bogus"))
+	p.Mock(&c.CacheSet{Key: "foo", Value: []byte("bogus")}, errors.New("bogus"))
+	p.Mock(&c.CacheSet{Key: "foo", Value: []byte("")}, errors.New("baz"))
+	a := &c.CacheSet{Key: "foo", Value: []byte(nil)}
+	err := p.Access(a)
+	if err == nil {
+		t.Fatal(err)
+	}
+	if s := err.Error(); s != `Not Mocked: heptane.CacheSet{Key:"foo", Value:heptane.CacheValue(nil)}` {
+		t.Error(s)
+	}
+}
+
 func TestAccessSlice(t *testing.T) {
 	p := Cache{}
 	a := c.CacheSet{Key: "foo", Value: []byte("bar")}

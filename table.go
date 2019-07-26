@@ -18,7 +18,7 @@ func marshalField(t r.Table, fn r.FieldName, fv r.FieldValue) ([]byte, error) {
 		if !ok {
 			return nil, UnsupportedFieldValueError{ft, fv}
 		}
-		return []byte(s), nil
+		return []byte("s" + s), nil
 	}
 }
 
@@ -26,10 +26,10 @@ func unmarshalField(t r.Table, fn r.FieldName, q []byte) (r.FieldValue, error) {
 	ft := t.Types[fn]
 	switch ft {
 	default: // "string"
-		if q == nil {
+		if len(q) == 0 {
 			return nil, nil
 		}
-		return string(q), nil
+		return string(q[1:]), nil
 	}
 }
 
@@ -69,10 +69,12 @@ func decodePrimaryKey(t r.Table, fvn r.FieldValuesByName) (cacheKey, error) {
 
 func (k cacheKey) key() c.CacheKey {
 	b := bytes.Buffer{}
-	for _, q := range k {
+	for i, q := range k {
+		if i != 0 {
+			// TODO use interface
+			b.WriteRune('#')
+		}
 		b.Write(q)
-		// TODO use interface
-		b.WriteRune('#')
 	}
 	return c.CacheKey(b.Bytes())
 }
@@ -101,12 +103,18 @@ func (v cacheValue) value() c.CacheValue {
 		return nil
 	}
 	b := bytes.Buffer{}
-	for _, q := range v {
+	for i, q := range v {
+		if i != 0 {
+			// TODO use interface
+			b.WriteRune('#')
+		}
 		b.Write(q)
-		// TODO use interface
-		b.WriteRune('#')
 	}
-	return c.CacheValue(b.Bytes())
+	cv := c.CacheValue(b.Bytes())
+	if cv == nil {
+		cv = c.CacheValue{}
+	}
+	return cv
 }
 
 func split(cv c.CacheValue) (v cacheValue) {
@@ -125,20 +133,25 @@ func isMissingSomeValue(t r.Table, fvn r.FieldValuesByName) bool {
 	return false
 }
 
-func unmarshalRow(t r.Table, cv cacheValue) (r.FieldValuesByName, error) {
+func encode(t r.Table, kv r.FieldValuesByName, cv cacheValue) (r.FieldValuesByName, error) {
 	if cv == nil {
 		return nil, nil
 	}
-	fvn := make(r.FieldValuesByName, len(t.Values))
+	fvn := make(r.FieldValuesByName, len(t.PrimaryKey)+len(t.Values))
+	for _, fn := range t.PrimaryKey {
+		fvn[fn] = kv[fn]
+	}
 	for i, fn := range t.Values {
 		if i >= len(cv) {
-			continue
+			break
 		}
 		v, err := unmarshalField(t, fn, cv[i])
 		if err != nil {
 			return nil, err
 		}
-		fvn[fn] = v
+		if v != nil {
+			fvn[fn] = v
+		}
 	}
 	return fvn, nil
 }
