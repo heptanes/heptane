@@ -87,7 +87,11 @@ func (h *heptane) create(a Create) error {
 	if f == nil {
 		return UnregisteredTableError{tn}
 	}
-	key, err := decodeKey(f.Table, a.FieldValues)
+	key, err := decodePrimaryKey(f.Table, a.FieldValues)
+	if err != nil {
+		return err
+	}
+	value, err := decodeValue(f.Table, a.FieldValues)
 	if err != nil {
 		return err
 	}
@@ -95,19 +99,8 @@ func (h *heptane) create(a Create) error {
 	if err := f.RowProvider.Access(rc); err != nil {
 		return RowProviderAccessError{rc, err}
 	}
-	if isMissingSomeValue(f.Table, a.FieldValues) {
-		rr := r.RowRetrieve{Table: f.Table, FieldValues: a.FieldValues}
-		if err := f.RowProvider.Access(&rr); err != nil {
-			return RowProviderAccessError{rr, err}
-		}
-		a.FieldValues = rr.RetrievedValues[0]
-	}
 	if f.CacheProvider == nil || f.Table.PrimaryKeyCachePrefix == nil {
 		return nil
-	}
-	value, err := decodeValue(f.Table, a.FieldValues)
-	if err != nil {
-		return err
 	}
 	cs := c.CacheSet{Key: key.key(), Value: value.value()}
 	if err := f.CacheProvider.Access(cs); err != nil {
@@ -123,7 +116,7 @@ func (h *heptane) retrieve(a *Retrieve) error {
 		return UnregisteredTableError{tn}
 	}
 	if f.CacheProvider != nil && f.Table.PrimaryKeyCachePrefix != nil {
-		key, err := decodeKey(f.Table, a.FieldValues)
+		key, err := decodePrimaryKey(f.Table, a.FieldValues)
 		if err == nil {
 			cg := c.CacheGet{Key: key.key()}
 			if err := f.CacheProvider.Access(&cg); err != nil {
@@ -147,7 +140,7 @@ func (h *heptane) retrieve(a *Retrieve) error {
 	a.RetrievedValues = rr.RetrievedValues
 	css := make([]c.CacheAccess, len(rr.RetrievedValues), 0)
 	for _, rv := range rr.RetrievedValues {
-		key, err := decodeKey(f.Table, rv)
+		key, err := decodePrimaryKey(f.Table, rv)
 		if err != nil {
 			return err
 		}
@@ -183,7 +176,7 @@ func (h *heptane) update(a Update) error {
 	if f == nil {
 		return UnregisteredTableError{tn}
 	}
-	key, err := decodeKey(f.Table, a.FieldValues)
+	key, err := decodePrimaryKey(f.Table, a.FieldValues)
 	if err != nil {
 		return err
 	}
@@ -218,7 +211,7 @@ func (h *heptane) delete(a Delete) error {
 	if f == nil {
 		return UnregisteredTableError{tn}
 	}
-	key, err := decodeKey(f.Table, a.FieldValues)
+	key, err := decodePrimaryKey(f.Table, a.FieldValues)
 	if err != nil {
 		return err
 	}

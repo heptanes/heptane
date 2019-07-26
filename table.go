@@ -8,12 +8,9 @@ import (
 )
 
 func marshalField(t r.Table, fn r.FieldName, fv r.FieldValue) ([]byte, error) {
-	ft, ok := t.Types[fn]
-	if !ok {
-		return nil, MissingFieldTypeError{t.Name, fn}
-	}
+	ft := t.Types[fn]
 	switch ft {
-	case "string":
+	default: // "string"
 		if fv == nil {
 			return nil, nil
 		}
@@ -23,28 +20,36 @@ func marshalField(t r.Table, fn r.FieldName, fv r.FieldValue) ([]byte, error) {
 		}
 		return []byte(s), nil
 	}
-	return nil, UnsupportedFieldTypeError{ft}
 }
 
 func unmarshalField(t r.Table, fn r.FieldName, q []byte) (r.FieldValue, error) {
-	ft, ok := t.Types[fn]
-	if !ok {
-		return nil, MissingFieldTypeError{t.Name, fn}
-	}
+	ft := t.Types[fn]
 	switch ft {
-	case "string":
+	default: // "string"
 		if q == nil {
 			return nil, nil
 		}
 		return string(q), nil
 	}
-	return nil, UnsupportedFieldTypeError{ft}
 }
 
 type cacheKey [][]byte
 
-func decodeKey(t r.Table, fvn r.FieldValuesByName) (cacheKey, error) {
-	ck := make(cacheKey, len(t.PrimaryKeyCachePrefix)+len(t.PrimaryKey), 0)
+func decodePartitionKey(t r.Table, fvn r.FieldValuesByName) error {
+	for _, fn := range t.PartitionKey {
+		fv, ok := fvn[fn]
+		if !ok {
+			return MissingFieldValueError{t.Name, fn, fvn}
+		}
+		if _, err := marshalField(t, fn, fv); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func decodePrimaryKey(t r.Table, fvn r.FieldValuesByName) (cacheKey, error) {
+	ck := make(cacheKey, 0, len(t.PrimaryKeyCachePrefix)+len(t.PrimaryKey))
 	for _, k := range t.PrimaryKeyCachePrefix {
 		ck = append(ck, []byte(k))
 	}
@@ -69,13 +74,13 @@ func (k cacheKey) key() c.CacheKey {
 		// TODO use interface
 		b.WriteRune('#')
 	}
-	return c.CacheKey(b.String())
+	return c.CacheKey(b.Bytes())
 }
 
 type cacheValue [][]byte
 
 func decodeValue(t r.Table, fvn r.FieldValuesByName) (cacheValue, error) {
-	cv := make(cacheValue, len(t.Values), 0)
+	cv := make(cacheValue, 0, len(t.Values))
 	for _, fn := range t.Values {
 		fv, ok := fvn[fn]
 		if !ok {

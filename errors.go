@@ -14,7 +14,7 @@ type UnregisteredTableError struct {
 }
 
 func (e UnregisteredTableError) Error() string {
-	return fmt.Sprintf("Unregistered TableName %v", e.TableName)
+	return fmt.Sprintf("Unregistered Table %v", e.TableName)
 }
 
 // NullRowProviderError is produced when a Table is registered with a nil
@@ -24,7 +24,7 @@ type NullRowProviderError struct {
 }
 
 func (e NullRowProviderError) Error() string {
-	return fmt.Sprintf("Null RowProvider for TableName %v", e.TableName)
+	return fmt.Sprintf("Null RowProvider for Table %v", e.TableName)
 }
 
 // RowProviderAccessError is produced when a RowProvider returns an error for a
@@ -59,16 +59,6 @@ func (e UnsupportedAccessTypeError) Error() string {
 	return fmt.Sprintf("Unsupported Access Type: %#v", e.Access)
 }
 
-// UnsupportedFieldTypeError is produced when a FieldType is not supported.
-// Current supported values are "string".
-type UnsupportedFieldTypeError struct {
-	FieldType r.FieldType
-}
-
-func (e UnsupportedFieldTypeError) Error() string {
-	return fmt.Sprintf("Unsupported FieldType: %v", e.FieldType)
-}
-
 // UnsupportedFieldValueError is produced when the type of a FieldValue does
 // not match the corresponding FieldType.
 type UnsupportedFieldValueError struct {
@@ -78,17 +68,6 @@ type UnsupportedFieldValueError struct {
 
 func (e UnsupportedFieldValueError) Error() string {
 	return fmt.Sprintf("Unsupported FieldValue for FieldType %v: %v", e.FieldType, e.FieldValue)
-}
-
-// MissingFieldTypeError is produced when a Table does not define a FieldType
-// for the given FieldName.
-type MissingFieldTypeError struct {
-	TableName r.TableName
-	FieldName r.FieldName
-}
-
-func (e MissingFieldTypeError) Error() string {
-	return fmt.Sprintf("Missing FieldType for Table %v: %v", e.TableName, e.FieldName)
 }
 
 // MissingFieldValueError is produced when a Table defines a FieldName that has
