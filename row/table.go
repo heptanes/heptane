@@ -58,7 +58,7 @@ func (t Table) Validate() error {
 		if !ok {
 			return fmt.Errorf("Table %v: Missing FieldType for FieldName: %v", t.Name, fn)
 		}
-		if ft != "string" {
+		if ft != "string" && ft != "bool" {
 			return fmt.Errorf("Table %v: Invalid FieldType for FieldName %v: %v", t.Name, fn, ft)
 		}
 	}
@@ -67,7 +67,7 @@ func (t Table) Validate() error {
 		if !ok {
 			return fmt.Errorf("Table %v: Missing FieldType for FieldName: %v", t.Name, fn)
 		}
-		if ft != "string" {
+		if ft != "string" && ft != "bool" {
 			return fmt.Errorf("Table %v: Invalid FieldType for FieldName %v: %v", t.Name, fn, ft)
 		}
 	}

@@ -47,10 +47,10 @@ func (p *Row) Access(a r.RowAccess) error {
 		for _, b := range p.s {
 			switch g := b.a.(type) {
 			case r.RowCreate:
-				if fmt.Sprint(g.Table) != fmt.Sprint(a.Table) {
+				if fmt.Sprintf("%#v", g.Table) != fmt.Sprintf("%#v", a.Table) {
 					continue
 				}
-				if fmt.Sprint(g.FieldValues) != fmt.Sprint(a.FieldValues) {
+				if fmt.Sprintf("%#v", g.FieldValues) != fmt.Sprintf("%#v", a.FieldValues) {
 					continue
 				}
 				return b.e
@@ -63,10 +63,10 @@ func (p *Row) Access(a r.RowAccess) error {
 		for _, b := range p.s {
 			switch g := b.a.(type) {
 			case r.RowRetrieve:
-				if fmt.Sprint(g.Table) != fmt.Sprint(a.Table) {
+				if fmt.Sprintf("%#v", g.Table) != fmt.Sprintf("%#v", a.Table) {
 					continue
 				}
-				if fmt.Sprint(g.FieldValues) != fmt.Sprint(a.FieldValues) {
+				if fmt.Sprintf("%#v", g.FieldValues) != fmt.Sprintf("%#v", a.FieldValues) {
 					continue
 				}
 				a.RetrievedValues = g.RetrievedValues
@@ -78,10 +78,10 @@ func (p *Row) Access(a r.RowAccess) error {
 		for _, b := range p.s {
 			switch g := b.a.(type) {
 			case r.RowUpdate:
-				if fmt.Sprint(g.Table) != fmt.Sprint(a.Table) {
+				if fmt.Sprintf("%#v", g.Table) != fmt.Sprintf("%#v", a.Table) {
 					continue
 				}
-				if fmt.Sprint(g.FieldValues) != fmt.Sprint(a.FieldValues) {
+				if fmt.Sprintf("%#v", g.FieldValues) != fmt.Sprintf("%#v", a.FieldValues) {
 					continue
 				}
 				return b.e
@@ -94,10 +94,10 @@ func (p *Row) Access(a r.RowAccess) error {
 		for _, b := range p.s {
 			switch g := b.a.(type) {
 			case r.RowDelete:
-				if fmt.Sprint(g.Table) != fmt.Sprint(a.Table) {
+				if fmt.Sprintf("%#v", g.Table) != fmt.Sprintf("%#v", a.Table) {
 					continue
 				}
-				if fmt.Sprint(g.FieldValues) != fmt.Sprint(a.FieldValues) {
+				if fmt.Sprintf("%#v", g.FieldValues) != fmt.Sprintf("%#v", a.FieldValues) {
 					continue
 				}
 				return b.e

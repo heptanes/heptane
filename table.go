@@ -10,6 +10,18 @@ import (
 func marshalField(t r.Table, fn r.FieldName, fv r.FieldValue) ([]byte, error) {
 	ft := t.Types[fn]
 	switch ft {
+	case "bool":
+		if fv == nil {
+			return nil, nil
+		}
+		b, ok := fv.(bool)
+		if !ok {
+			return nil, UnsupportedFieldValueError{ft, fv}
+		}
+		if b {
+			return []byte("t"), nil
+		}
+		return []byte("f"), nil
 	default: // "string"
 		if fv == nil {
 			return nil, nil
@@ -25,6 +37,18 @@ func marshalField(t r.Table, fn r.FieldName, fv r.FieldValue) ([]byte, error) {
 func unmarshalField(t r.Table, fn r.FieldName, q []byte) (r.FieldValue, error) {
 	ft := t.Types[fn]
 	switch ft {
+	case "bool":
+		if len(q) == 0 {
+			return nil, nil
+		}
+		switch string(q) {
+		case "t":
+			return true, nil
+		case "f":
+			return false, nil
+		default:
+			return nil, UnsupportedFieldValueError{ft, q}
+		}
 	default: // "string"
 		if len(q) == 0 {
 			return nil, nil

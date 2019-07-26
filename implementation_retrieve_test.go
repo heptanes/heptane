@@ -579,3 +579,157 @@ func TestHeptane_Retrieve_WithCache_WithPrimaryKey_CacheMiss_OK_MultipleValues_3
 		t.Error(s)
 	}
 }
+
+func TestHeptane_Retrieve_Bool_InvalidValue(t *testing.T) {
+	h := New()
+	b := TestingTable1()
+	b.Types = r.FieldTypesByName{"foo": "bool", "bar": "bool", "baz": "bool"}
+	rm := &rm.Row{}
+	if err := h.Register(b, rm, nil); err != nil {
+		t.Error(err)
+	}
+	a := &Retrieve{b.Name, r.FieldValuesByName{"foo": "invalid", "bar": true}, nil}
+	if err := h.Access(a); err == nil {
+		t.Error(err)
+	} else if s := err.Error(); s != `Unsupported FieldValue for FieldType bool: invalid` {
+		t.Error(s)
+	}
+}
+
+func TestHeptane_Retrieve_Bool_Row_Nil(t *testing.T) {
+	h := New()
+	b := TestingTable1()
+	b.Types = r.FieldTypesByName{"foo": "bool", "bar": "bool", "baz": "bool"}
+	rm := &rm.Row{}
+	if err := h.Register(b, rm, nil); err != nil {
+		t.Error(err)
+	}
+	rm.Mock(r.RowRetrieve{Table: b, FieldValues: r.FieldValuesByName{"foo": false, "bar": true},
+		RetrievedValues: []r.FieldValuesByName{
+			r.FieldValuesByName{"foo": false, "bar": true, "baz": nil},
+		}}, nil)
+	a := &Retrieve{b.Name, r.FieldValuesByName{"foo": false, "bar": true}, nil}
+	if err := h.Access(a); err != nil {
+		t.Error(err)
+	}
+	if s := fmt.Sprintf("%#v", a.RetrievedValues); s != `[]heptane.FieldValuesByName{heptane.FieldValuesByName{"bar":true, "baz":heptane.FieldValue(nil), "foo":false}}` {
+		t.Error(s)
+	}
+}
+
+func TestHeptane_Retrieve_Bool_Row_False(t *testing.T) {
+	h := New()
+	b := TestingTable1()
+	b.Types = r.FieldTypesByName{"foo": "bool", "bar": "bool", "baz": "bool"}
+	rm := &rm.Row{}
+	if err := h.Register(b, rm, nil); err != nil {
+		t.Error(err)
+	}
+	rm.Mock(r.RowRetrieve{Table: b, FieldValues: r.FieldValuesByName{"foo": false, "bar": true},
+		RetrievedValues: []r.FieldValuesByName{
+			r.FieldValuesByName{"foo": false, "bar": true, "baz": false},
+		}}, nil)
+	a := &Retrieve{b.Name, r.FieldValuesByName{"foo": false, "bar": true}, nil}
+	if err := h.Access(a); err != nil {
+		t.Error(err)
+	}
+	if s := fmt.Sprintf("%#v", a.RetrievedValues); s != `[]heptane.FieldValuesByName{heptane.FieldValuesByName{"bar":true, "baz":false, "foo":false}}` {
+		t.Error(s)
+	}
+}
+
+func TestHeptane_Retrieve_Bool_Row_True(t *testing.T) {
+	h := New()
+	b := TestingTable1()
+	b.Types = r.FieldTypesByName{"foo": "bool", "bar": "bool", "baz": "bool"}
+	rm := &rm.Row{}
+	if err := h.Register(b, rm, nil); err != nil {
+		t.Error(err)
+	}
+	rm.Mock(r.RowRetrieve{Table: b, FieldValues: r.FieldValuesByName{"foo": false, "bar": true},
+		RetrievedValues: []r.FieldValuesByName{
+			r.FieldValuesByName{"foo": false, "bar": true, "baz": true},
+		}}, nil)
+	a := &Retrieve{b.Name, r.FieldValuesByName{"foo": false, "bar": true}, nil}
+	if err := h.Access(a); err != nil {
+		t.Error(err)
+	}
+	if s := fmt.Sprintf("%#v", a.RetrievedValues); s != `[]heptane.FieldValuesByName{heptane.FieldValuesByName{"bar":true, "baz":true, "foo":false}}` {
+		t.Error(s)
+	}
+}
+
+func TestHeptane_Retrieve_Bool_WithCache_InvalidValue(t *testing.T) {
+	h := New()
+	b := TestingTable1()
+	b.Types = r.FieldTypesByName{"foo": "bool", "bar": "bool", "baz": "bool"}
+	rm := &rm.Row{}
+	cm := &cm.Cache{}
+	if err := h.Register(b, rm, cm); err != nil {
+		t.Error(err)
+	}
+	cm.Mock(c.CacheGet{Key: "table1_pk#0#f#t", Value: c.CacheValue("invalid")}, nil)
+	a := &Retrieve{b.Name, r.FieldValuesByName{"foo": false, "bar": true}, nil}
+	if err := h.Access(a); err == nil {
+		t.Error(err)
+	} else if s := err.Error(); s != `Unsupported FieldValue for FieldType bool: [105 110 118 97 108 105 100]` {
+		t.Error(s)
+	}
+}
+
+func TestHeptane_Retrieve_Bool_WithCache_Nil(t *testing.T) {
+	h := New()
+	b := TestingTable1()
+	b.Types = r.FieldTypesByName{"foo": "bool", "bar": "bool", "baz": "bool"}
+	rm := &rm.Row{}
+	cm := &cm.Cache{}
+	if err := h.Register(b, rm, cm); err != nil {
+		t.Error(err)
+	}
+	cm.Mock(c.CacheGet{Key: "table1_pk#0#f#t", Value: c.CacheValue("")}, nil)
+	a := &Retrieve{b.Name, r.FieldValuesByName{"foo": false, "bar": true}, nil}
+	if err := h.Access(a); err != nil {
+		t.Error(err)
+	}
+	if s := fmt.Sprintf("%#v", a.RetrievedValues); s != `[]heptane.FieldValuesByName{heptane.FieldValuesByName{"bar":true, "foo":false}}` {
+		t.Error(s)
+	}
+}
+
+func TestHeptane_Retrieve_Bool_WithCache_False(t *testing.T) {
+	h := New()
+	b := TestingTable1()
+	b.Types = r.FieldTypesByName{"foo": "bool", "bar": "bool", "baz": "bool"}
+	rm := &rm.Row{}
+	cm := &cm.Cache{}
+	if err := h.Register(b, rm, cm); err != nil {
+		t.Error(err)
+	}
+	cm.Mock(c.CacheGet{Key: "table1_pk#0#f#t", Value: c.CacheValue("f")}, nil)
+	a := &Retrieve{b.Name, r.FieldValuesByName{"foo": false, "bar": true}, nil}
+	if err := h.Access(a); err != nil {
+		t.Error(err)
+	}
+	if s := fmt.Sprintf("%#v", a.RetrievedValues); s != `[]heptane.FieldValuesByName{heptane.FieldValuesByName{"bar":true, "baz":false, "foo":false}}` {
+		t.Error(s)
+	}
+}
+
+func TestHeptane_Retrieve_Bool_WithCache_True(t *testing.T) {
+	h := New()
+	b := TestingTable1()
+	b.Types = r.FieldTypesByName{"foo": "bool", "bar": "bool", "baz": "bool"}
+	rm := &rm.Row{}
+	cm := &cm.Cache{}
+	if err := h.Register(b, rm, cm); err != nil {
+		t.Error(err)
+	}
+	cm.Mock(c.CacheGet{Key: "table1_pk#0#f#t", Value: c.CacheValue("t")}, nil)
+	a := &Retrieve{b.Name, r.FieldValuesByName{"foo": false, "bar": true}, nil}
+	if err := h.Access(a); err != nil {
+		t.Error(err)
+	}
+	if s := fmt.Sprintf("%#v", a.RetrievedValues); s != `[]heptane.FieldValuesByName{heptane.FieldValuesByName{"bar":true, "baz":true, "foo":false}}` {
+		t.Error(s)
+	}
+}

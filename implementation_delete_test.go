@@ -129,3 +129,35 @@ func TestHeptane_Delete_WithCache_OK(t *testing.T) {
 		t.Error(err)
 	}
 }
+
+func TestHeptane_Delete_Bool_InvalidValue(t *testing.T) {
+	h := New()
+	b := TestingTable1()
+	b.Types = r.FieldTypesByName{"foo": "bool", "bar": "bool", "baz": "bool"}
+	rm := &rm.Row{}
+	cm := &cm.Cache{}
+	if err := h.Register(b, rm, cm); err != nil {
+		t.Error(err)
+	}
+	if err := h.Access(Delete{b.Name, r.FieldValuesByName{"foo": "invalid", "bar": true}}); err == nil {
+		t.Error(err)
+	} else if s := err.Error(); s != `Unsupported FieldValue for FieldType bool: invalid` {
+		t.Error(s)
+	}
+}
+
+func TestHeptane_Delete_Bool_OK(t *testing.T) {
+	h := New()
+	b := TestingTable1()
+	b.Types = r.FieldTypesByName{"foo": "bool", "bar": "bool", "baz": "bool"}
+	rm := &rm.Row{}
+	cm := &cm.Cache{}
+	if err := h.Register(b, rm, cm); err != nil {
+		t.Error(err)
+	}
+	rm.Mock(r.RowDelete{Table: b, FieldValues: r.FieldValuesByName{"foo": false, "bar": true}}, nil)
+	cm.Mock(c.CacheSet{Key: "table1_pk#0#f#t", Value: nil}, nil)
+	if err := h.Access(Delete{b.Name, r.FieldValuesByName{"foo": false, "bar": true}}); err != nil {
+		t.Error(err)
+	}
+}
