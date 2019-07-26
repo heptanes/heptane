@@ -158,6 +158,30 @@ func TestHeptane_Retrieve_WithPrimaryKey_OK(t *testing.T) {
 	}
 }
 
+func TestHeptane_Retrieve_WithPrimaryKey_OK_BySlice_ByRef(t *testing.T) {
+	h := New()
+	b := TestingTable1()
+	rm := &rm.Row{}
+	if err := h.Register(b, rm, nil); err != nil {
+		t.Error(err)
+	}
+	rm.Mock(r.RowRetrieve{Table: b, FieldValues: r.FieldValuesByName{"foo": "1", "bar": "2"},
+		RetrievedValues: []r.FieldValuesByName{
+			r.FieldValuesByName{"foo": "1", "bar": "2", "baz": "3"},
+		}}, nil)
+	a := &Retrieve{b.Name, r.FieldValuesByName{"foo": "1", "bar": "2"}, nil}
+	if errs := h.AccessSlice([]Access{a}); errs == nil {
+		t.Error(errs)
+	} else if l := len(errs); l != 1 {
+		t.Error(l)
+	} else if err := errs[0]; err != nil {
+		t.Error(err)
+	}
+	if s := fmt.Sprintf("%#v", a.RetrievedValues); s != `[]heptane.FieldValuesByName{heptane.FieldValuesByName{"bar":"2", "baz":"3", "foo":"1"}}` {
+		t.Error(s)
+	}
+}
+
 func TestHeptane_Retrieve_WithCache_MissingPrimaryKey_RowAccessError(t *testing.T) {
 	h := New()
 	b := TestingTable1()

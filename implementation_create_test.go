@@ -120,6 +120,24 @@ func TestHeptane_Create_OK_NotNullValue(t *testing.T) {
 	}
 }
 
+func TestHeptane_Create_OK_BySlice_ByRef(t *testing.T) {
+	h := New()
+	b := TestingTable1()
+	rm := &rm.Row{}
+	if err := h.Register(b, rm, nil); err != nil {
+		t.Error(err)
+	}
+	rm.Mock(r.RowCreate{Table: b, FieldValues: r.FieldValuesByName{"foo": "1", "bar": "2", "baz": "3"}}, nil)
+	a := &Create{b.Name, r.FieldValuesByName{"foo": "1", "bar": "2", "baz": "3"}}
+	if errs := h.AccessSlice([]Access{a}); errs == nil {
+		t.Error(errs)
+	} else if l := len(errs); l != 1 {
+		t.Error(l)
+	} else if err := errs[0]; err != nil {
+		t.Error(err)
+	}
+}
+
 func TestHeptane_Create_OK_Multiplevalues(t *testing.T) {
 	h := New()
 	b := TestingTable1()
