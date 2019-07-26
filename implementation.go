@@ -190,21 +190,29 @@ func (h *heptane) update(a Update) error {
 	if err != nil {
 		return err
 	}
+	if _, err := decodeValue(f.Table, a.FieldValues); err != nil {
+		return err
+	}
 	ru := r.RowUpdate{Table: f.Table, FieldValues: a.FieldValues}
 	if err := f.RowProvider.Access(ru); err != nil {
 		return RowProviderAccessError{ru, err}
 	}
-	if isMissingSomeValue(f.Table, a.FieldValues) {
-		rr := r.RowRetrieve{Table: f.Table, FieldValues: a.FieldValues}
-		if err := f.RowProvider.Access(&rr); err != nil {
-			return RowProviderAccessError{rr, err}
-		}
-		a.FieldValues = rr.RetrievedValues[0]
-	}
 	if f.CacheProvider == nil || f.Table.PrimaryKeyCachePrefix == nil {
 		return nil
 	}
-	value, err := decodeValue(f.Table, a.FieldValues)
+	fv := a.FieldValues
+	if isMissingSomeValue(f.Table, a.FieldValues) {
+		kv := r.FieldValuesByName{}
+		for _, fn := range f.Table.PrimaryKey {
+			kv[fn] = a.FieldValues[fn]
+		}
+		rr := r.RowRetrieve{Table: f.Table, FieldValues: kv}
+		if err := f.RowProvider.Access(&rr); err != nil {
+			return RowProviderAccessError{rr, err}
+		}
+		fv = rr.RetrievedValues[0]
+	}
+	value, err := decodeValue(f.Table, fv)
 	if err != nil {
 		return err
 	}
