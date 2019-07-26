@@ -1,75 +1,181 @@
 package heptane
 
-import "fmt"
+import (
+	"bytes"
 
-// Validate checks there are no inconsistencies in the definition of the Table.
-func (t Table) Validate() error {
-	if len(t.Name) == 0 {
-		return fmt.Errorf("Empty TableName in Table")
-	}
-	if len(t.PartitionKey) == 0 {
-		return fmt.Errorf("Table %v: Missing PartitionKey", t.Name)
-	}
-	for i, fn := range t.PartitionKey {
-		if len(fn) == 0 {
-			return fmt.Errorf("Table %v: Empty FieldName in PartitionKey", t.Name)
+	c "github.com/heptanes/heptane/cache"
+	r "github.com/heptanes/heptane/row"
+)
+
+func marshalField(t r.Table, fn r.FieldName, fv r.FieldValue) ([]byte, error) {
+	ft := t.Types[fn]
+	switch ft {
+	case "bool":
+		if fv == nil {
+			return nil, nil
 		}
-		for _, fn2 := range t.PartitionKey[:i] {
-			if fn2 == fn {
-				return fmt.Errorf("Table %v: Repeated FieldName in PartitionKey: %v", t.Name, fn)
-			}
-		}
-	}
-	if len(t.PrimaryKey) == 0 {
-		return fmt.Errorf("Table %v: Missing PrimaryKey", t.Name)
-	}
-	for i, fn := range t.PrimaryKey {
-		if len(fn) == 0 {
-			return fmt.Errorf("Table %v: Empty FieldName in PrimaryKey", t.Name)
-		}
-		if i < len(t.PartitionKey) {
-			if fn2 := t.PartitionKey[i]; fn != fn2 {
-				return fmt.Errorf("Table %v: Mismatched PrimaryKey: %v", t.Name, fn)
-			}
-		}
-		for _, fn2 := range t.PrimaryKey[:i] {
-			if fn2 == fn {
-				return fmt.Errorf("Table %v: Repeated FieldName in PrimaryKey: %v", t.Name, fn)
-			}
-		}
-	}
-	for i, fn := range t.Values {
-		if len(fn) == 0 {
-			return fmt.Errorf("Table %v: Empty FieldName in Values", t.Name)
-		}
-		for _, fn2 := range t.PrimaryKey {
-			if fn2 == fn {
-				return fmt.Errorf("Table %v: Repeated FieldName in Values: %v", t.Name, fn)
-			}
-		}
-		for _, fn2 := range t.Values[:i] {
-			if fn2 == fn {
-				return fmt.Errorf("Table %v: Repeated FieldName in Values: %v", t.Name, fn)
-			}
-		}
-	}
-	for _, fn := range t.PrimaryKey {
-		ft, ok := t.Types[fn]
+		b, ok := fv.(bool)
 		if !ok {
-			return fmt.Errorf("Table %v: Missing FieldType for FieldName: %v", t.Name, fn)
+			return nil, UnsupportedFieldValueError{ft, fv}
 		}
-		if ft != "string" {
-			return fmt.Errorf("Table %v: Invalid FieldType for FieldName %v: %v", t.Name, fn, ft)
+		if b {
+			return []byte("t"), nil
 		}
-	}
-	for _, fn := range t.Values {
-		ft, ok := t.Types[fn]
+		return []byte("f"), nil
+	default: // "string"
+		if fv == nil {
+			return nil, nil
+		}
+		s, ok := fv.(string)
 		if !ok {
-			return fmt.Errorf("Table %v: Missing FieldType for FieldName: %v", t.Name, fn)
+			return nil, UnsupportedFieldValueError{ft, fv}
 		}
-		if ft != "string" {
-			return fmt.Errorf("Table %v: Invalid FieldType for FieldName %v: %v", t.Name, fn, ft)
+		return []byte("s" + s), nil
+	}
+}
+
+func unmarshalField(t r.Table, fn r.FieldName, q []byte) (r.FieldValue, error) {
+	ft := t.Types[fn]
+	switch ft {
+	case "bool":
+		if len(q) == 0 {
+			return nil, nil
+		}
+		switch string(q) {
+		case "t":
+			return true, nil
+		case "f":
+			return false, nil
+		default:
+			return nil, UnsupportedFieldValueError{ft, q}
+		}
+	default: // "string"
+		if len(q) == 0 {
+			return nil, nil
+		}
+		return string(q[1:]), nil
+	}
+}
+
+type cacheKey [][]byte
+
+func decodePartitionKey(t r.Table, fvn r.FieldValuesByName) error {
+	for _, fn := range t.PartitionKey {
+		fv, ok := fvn[fn]
+		if !ok {
+			return MissingFieldValueError{t.Name, fn, fvn}
+		}
+		if _, err := marshalField(t, fn, fv); err != nil {
+			return err
 		}
 	}
 	return nil
+}
+
+func decodePrimaryKey(t r.Table, fvn r.FieldValuesByName) (cacheKey, error) {
+	ck := make(cacheKey, 0, len(t.PrimaryKeyCachePrefix)+len(t.PrimaryKey))
+	for _, k := range t.PrimaryKeyCachePrefix {
+		ck = append(ck, []byte(k))
+	}
+	for _, fn := range t.PrimaryKey {
+		fv, ok := fvn[fn]
+		if !ok {
+			return nil, MissingFieldValueError{t.Name, fn, fvn}
+		}
+		v, err := marshalField(t, fn, fv)
+		if err != nil {
+			return nil, err
+		}
+		ck = append(ck, v)
+	}
+	return ck, nil
+}
+
+func (k cacheKey) key() c.CacheKey {
+	b := bytes.Buffer{}
+	for i, q := range k {
+		if i != 0 {
+			// TODO use interface
+			b.WriteRune('#')
+		}
+		b.Write(q)
+	}
+	return c.CacheKey(b.Bytes())
+}
+
+type cacheValue [][]byte
+
+func decodeValue(t r.Table, fvn r.FieldValuesByName) (cacheValue, error) {
+	cv := make(cacheValue, 0, len(t.Values))
+	for _, fn := range t.Values {
+		fv, ok := fvn[fn]
+		if !ok {
+			cv = append(cv, nil)
+			continue
+		}
+		v, err := marshalField(t, fn, fv)
+		if err != nil {
+			return nil, err
+		}
+		cv = append(cv, v)
+	}
+	return cv, nil
+}
+
+func (v cacheValue) value() c.CacheValue {
+	if v == nil {
+		return nil
+	}
+	b := bytes.Buffer{}
+	for i, q := range v {
+		if i != 0 {
+			// TODO use interface
+			b.WriteRune('#')
+		}
+		b.Write(q)
+	}
+	cv := c.CacheValue(b.Bytes())
+	if cv == nil {
+		cv = c.CacheValue{}
+	}
+	return cv
+}
+
+func split(cv c.CacheValue) (v cacheValue) {
+	if cv == nil {
+		return nil
+	}
+	return cacheValue(bytes.Split(cv, []byte("#")))
+}
+
+func isMissingSomeValue(t r.Table, fvn r.FieldValuesByName) bool {
+	for _, fn := range t.Values {
+		if _, ok := fvn[fn]; !ok {
+			return true
+		}
+	}
+	return false
+}
+
+func encode(t r.Table, kv r.FieldValuesByName, cv cacheValue) (r.FieldValuesByName, error) {
+	if cv == nil {
+		return nil, nil
+	}
+	fvn := make(r.FieldValuesByName, len(t.PrimaryKey)+len(t.Values))
+	for _, fn := range t.PrimaryKey {
+		fvn[fn] = kv[fn]
+	}
+	for i, fn := range t.Values {
+		if i >= len(cv) {
+			break
+		}
+		v, err := unmarshalField(t, fn, cv[i])
+		if err != nil {
+			return nil, err
+		}
+		if v != nil {
+			fvn[fn] = v
+		}
+	}
+	return fvn, nil
 }

@@ -5,34 +5,34 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/heptanes/heptane"
+	r "github.com/heptanes/heptane/row"
 )
 
 var (
-	table = heptane.Table{
+	table = r.Table{
 		Name:                  "table",
-		PartitionKey:          []heptane.FieldName{"foo"},
-		PrimaryKey:            []heptane.FieldName{"foo", "bar"},
-		Values:                []heptane.FieldName{"baz"},
-		Types:                 heptane.FieldTypesByName{"foo": "string", "bar": "string", "baz": "int"},
-		PrimaryKeyCachePrefix: []heptane.CacheKey{"table_pk", "0"},
+		PartitionKey:          []r.FieldName{"foo"},
+		PrimaryKey:            []r.FieldName{"foo", "bar"},
+		Values:                []r.FieldName{"baz"},
+		Types:                 r.FieldTypesByName{"foo": "string", "bar": "string", "baz": "string"},
+		PrimaryKeyCachePrefix: []string{"table_pk", "0"},
 	}
-	bogusTable = heptane.Table{
+	bogusTable = r.Table{
 		Name:                  "bogus",
 		PartitionKey:          table.PartitionKey,
 		PrimaryKey:            table.PrimaryKey,
 		Values:                table.Values,
 		Types:                 table.Types,
-		PrimaryKeyCachePrefix: []heptane.CacheKey{"bogus_pk", "0"},
+		PrimaryKeyCachePrefix: []string{"bogus_pk", "0"},
 	}
-	primaryFieldsValues  = heptane.FieldValuesByName{"foo": "1", "bar": "2"}
-	allFieldsValues      = heptane.FieldValuesByName{"foo": "1", "bar": "2", "baz": 3}
-	allFieldsValuesSlice = []heptane.FieldValuesByName{allFieldsValues}
+	primaryFieldsValues  = r.FieldValuesByName{"foo": "1", "bar": "2"}
+	allFieldsValues      = r.FieldValuesByName{"foo": "1", "bar": "2", "baz": 3}
+	allFieldsValuesSlice = []r.FieldValuesByName{allFieldsValues}
 )
 
 func TestAccess_Unsupported_Retrieve(t *testing.T) {
 	p := Row{}
-	a := heptane.RowRetrieve{Table: table, FieldValues: allFieldsValues}
+	a := r.RowRetrieve{Table: table, FieldValues: allFieldsValues}
 	err := p.Access(a)
 	if err == nil {
 		t.Fatal(err)
@@ -44,34 +44,34 @@ func TestAccess_Unsupported_Retrieve(t *testing.T) {
 
 func TestAccess_Unmocked_NormalCreate(t *testing.T) {
 	p := Row{}
-	a := heptane.RowCreate{Table: table, FieldValues: allFieldsValues}
+	a := r.RowCreate{Table: table, FieldValues: allFieldsValues}
 	err := p.Access(a)
 	if err == nil {
 		t.Fatal(err)
 	}
-	if s := err.Error(); s != `Not Mocked: heptane.RowCreate{Table:heptane.Table{Name:"table", PartitionKey:[]heptane.FieldName{"foo"}, PrimaryKey:[]heptane.FieldName{"foo", "bar"}, Values:[]heptane.FieldName{"baz"}, Types:heptane.FieldTypesByName{"bar":"string", "baz":"int", "foo":"string"}, PrimaryKeyCachePrefix:[]heptane.CacheKey{"table_pk", "0"}}, FieldValues:heptane.FieldValuesByName{"bar":"2", "baz":3, "foo":"1"}}` {
+	if s := err.Error(); s != `Not Mocked: heptane.RowCreate{Table:heptane.Table{Name:"table", PartitionKey:[]heptane.FieldName{"foo"}, PrimaryKey:[]heptane.FieldName{"foo", "bar"}, Values:[]heptane.FieldName{"baz"}, Types:heptane.FieldTypesByName{"bar":"string", "baz":"string", "foo":"string"}, PrimaryKeyCachePrefix:[]string{"table_pk", "0"}}, FieldValues:heptane.FieldValuesByName{"bar":"2", "baz":3, "foo":"1"}}` {
 		t.Error(s)
 	}
 }
 
 func TestAccess_Unmocked_RefCreate(t *testing.T) {
 	p := Row{}
-	a := &heptane.RowCreate{Table: table, FieldValues: allFieldsValues}
+	a := &r.RowCreate{Table: table, FieldValues: allFieldsValues}
 	err := p.Access(a)
 	if err == nil {
 		t.Fatal(err)
 	}
-	if s := err.Error(); s != `Not Mocked: heptane.RowCreate{Table:heptane.Table{Name:"table", PartitionKey:[]heptane.FieldName{"foo"}, PrimaryKey:[]heptane.FieldName{"foo", "bar"}, Values:[]heptane.FieldName{"baz"}, Types:heptane.FieldTypesByName{"bar":"string", "baz":"int", "foo":"string"}, PrimaryKeyCachePrefix:[]heptane.CacheKey{"table_pk", "0"}}, FieldValues:heptane.FieldValuesByName{"bar":"2", "baz":3, "foo":"1"}}` {
+	if s := err.Error(); s != `Not Mocked: heptane.RowCreate{Table:heptane.Table{Name:"table", PartitionKey:[]heptane.FieldName{"foo"}, PrimaryKey:[]heptane.FieldName{"foo", "bar"}, Values:[]heptane.FieldName{"baz"}, Types:heptane.FieldTypesByName{"bar":"string", "baz":"string", "foo":"string"}, PrimaryKeyCachePrefix:[]string{"table_pk", "0"}}, FieldValues:heptane.FieldValuesByName{"bar":"2", "baz":3, "foo":"1"}}` {
 		t.Error(s)
 	}
 }
 
 func TestAccess_NormalMocked_NormalCreate(t *testing.T) {
 	p := Row{}
-	p.Mock(heptane.RowCreate{Table: bogusTable, FieldValues: allFieldsValues}, errors.New("bogus"))
-	p.Mock(heptane.RowCreate{Table: table, FieldValues: heptane.FieldValuesByName{}}, errors.New("bogus"))
-	p.Mock(heptane.RowCreate{Table: table, FieldValues: allFieldsValues}, errors.New("err"))
-	a := heptane.RowCreate{Table: table, FieldValues: allFieldsValues}
+	p.Mock(r.RowCreate{Table: bogusTable, FieldValues: allFieldsValues}, errors.New("bogus"))
+	p.Mock(r.RowCreate{Table: table, FieldValues: r.FieldValuesByName{}}, errors.New("bogus"))
+	p.Mock(r.RowCreate{Table: table, FieldValues: allFieldsValues}, errors.New("err"))
+	a := r.RowCreate{Table: table, FieldValues: allFieldsValues}
 	err := p.Access(a)
 	if err == nil {
 		t.Fatal(err)
@@ -83,10 +83,10 @@ func TestAccess_NormalMocked_NormalCreate(t *testing.T) {
 
 func TestAccess_RefMocked_NormalCreate(t *testing.T) {
 	p := Row{}
-	p.Mock(&heptane.RowCreate{Table: bogusTable, FieldValues: allFieldsValues}, errors.New("bogus"))
-	p.Mock(&heptane.RowCreate{Table: table, FieldValues: heptane.FieldValuesByName{}}, errors.New("bogus"))
-	p.Mock(&heptane.RowCreate{Table: table, FieldValues: allFieldsValues}, errors.New("err"))
-	a := heptane.RowCreate{Table: table, FieldValues: allFieldsValues}
+	p.Mock(&r.RowCreate{Table: bogusTable, FieldValues: allFieldsValues}, errors.New("bogus"))
+	p.Mock(&r.RowCreate{Table: table, FieldValues: r.FieldValuesByName{}}, errors.New("bogus"))
+	p.Mock(&r.RowCreate{Table: table, FieldValues: allFieldsValues}, errors.New("err"))
+	a := r.RowCreate{Table: table, FieldValues: allFieldsValues}
 	err := p.Access(a)
 	if err == nil {
 		t.Fatal(err)
@@ -98,10 +98,10 @@ func TestAccess_RefMocked_NormalCreate(t *testing.T) {
 
 func TestAccess_NormalMocked_RefCreate(t *testing.T) {
 	p := Row{}
-	p.Mock(heptane.RowCreate{Table: bogusTable, FieldValues: allFieldsValues}, errors.New("bogus"))
-	p.Mock(heptane.RowCreate{Table: table, FieldValues: heptane.FieldValuesByName{}}, errors.New("bogus"))
-	p.Mock(heptane.RowCreate{Table: table, FieldValues: allFieldsValues}, errors.New("err"))
-	a := &heptane.RowCreate{Table: table, FieldValues: allFieldsValues}
+	p.Mock(r.RowCreate{Table: bogusTable, FieldValues: allFieldsValues}, errors.New("bogus"))
+	p.Mock(r.RowCreate{Table: table, FieldValues: r.FieldValuesByName{}}, errors.New("bogus"))
+	p.Mock(r.RowCreate{Table: table, FieldValues: allFieldsValues}, errors.New("err"))
+	a := &r.RowCreate{Table: table, FieldValues: allFieldsValues}
 	err := p.Access(a)
 	if err == nil {
 		t.Fatal(err)
@@ -113,10 +113,10 @@ func TestAccess_NormalMocked_RefCreate(t *testing.T) {
 
 func TestAccess_RefMocked_RefCreate(t *testing.T) {
 	p := Row{}
-	p.Mock(&heptane.RowCreate{Table: bogusTable, FieldValues: allFieldsValues}, errors.New("bogus"))
-	p.Mock(&heptane.RowCreate{Table: table, FieldValues: heptane.FieldValuesByName{}}, errors.New("bogus"))
-	p.Mock(&heptane.RowCreate{Table: table, FieldValues: allFieldsValues}, errors.New("err"))
-	a := &heptane.RowCreate{Table: table, FieldValues: allFieldsValues}
+	p.Mock(&r.RowCreate{Table: bogusTable, FieldValues: allFieldsValues}, errors.New("bogus"))
+	p.Mock(&r.RowCreate{Table: table, FieldValues: r.FieldValuesByName{}}, errors.New("bogus"))
+	p.Mock(&r.RowCreate{Table: table, FieldValues: allFieldsValues}, errors.New("err"))
+	a := &r.RowCreate{Table: table, FieldValues: allFieldsValues}
 	err := p.Access(a)
 	if err == nil {
 		t.Fatal(err)
@@ -128,23 +128,23 @@ func TestAccess_RefMocked_RefCreate(t *testing.T) {
 
 func TestAccess_Unmocked_Retrieve(t *testing.T) {
 	p := Row{}
-	a := &heptane.RowRetrieve{Table: table, FieldValues: primaryFieldsValues}
+	a := &r.RowRetrieve{Table: table, FieldValues: primaryFieldsValues}
 	err := p.Access(a)
 	if err == nil {
 		t.Fatal(err)
 	}
-	if s := err.Error(); s != `Not Mocked: &heptane.RowRetrieve{Table:heptane.Table{Name:"table", PartitionKey:[]heptane.FieldName{"foo"}, PrimaryKey:[]heptane.FieldName{"foo", "bar"}, Values:[]heptane.FieldName{"baz"}, Types:heptane.FieldTypesByName{"bar":"string", "baz":"int", "foo":"string"}, PrimaryKeyCachePrefix:[]heptane.CacheKey{"table_pk", "0"}}, FieldValues:heptane.FieldValuesByName{"bar":"2", "foo":"1"}, RetrievedValues:[]heptane.FieldValuesByName(nil)}` {
+	if s := err.Error(); s != `Not Mocked: &heptane.RowRetrieve{Table:heptane.Table{Name:"table", PartitionKey:[]heptane.FieldName{"foo"}, PrimaryKey:[]heptane.FieldName{"foo", "bar"}, Values:[]heptane.FieldName{"baz"}, Types:heptane.FieldTypesByName{"bar":"string", "baz":"string", "foo":"string"}, PrimaryKeyCachePrefix:[]string{"table_pk", "0"}}, FieldValues:heptane.FieldValuesByName{"bar":"2", "foo":"1"}, RetrievedValues:[]heptane.FieldValuesByName(nil)}` {
 		t.Error(s)
 	}
 }
 
 func TestAccess_NormalMocked_Retrieve(t *testing.T) {
 	p := Row{}
-	p.Mock(heptane.RowRetrieve{Table: bogusTable, FieldValues: primaryFieldsValues}, errors.New("bogus"))
-	p.Mock(heptane.RowRetrieve{Table: table, FieldValues: heptane.FieldValuesByName{}}, errors.New("bogus"))
-	p.Mock(heptane.RowRetrieve{Table: table, FieldValues: primaryFieldsValues,
+	p.Mock(r.RowRetrieve{Table: bogusTable, FieldValues: primaryFieldsValues}, errors.New("bogus"))
+	p.Mock(r.RowRetrieve{Table: table, FieldValues: r.FieldValuesByName{}}, errors.New("bogus"))
+	p.Mock(r.RowRetrieve{Table: table, FieldValues: primaryFieldsValues,
 		RetrievedValues: allFieldsValuesSlice}, errors.New("err"))
-	a := &heptane.RowRetrieve{Table: table, FieldValues: primaryFieldsValues}
+	a := &r.RowRetrieve{Table: table, FieldValues: primaryFieldsValues}
 	err := p.Access(a)
 	if err == nil {
 		t.Fatal(err)
@@ -159,11 +159,11 @@ func TestAccess_NormalMocked_Retrieve(t *testing.T) {
 
 func TestAccess_RefMocked_Retrieve(t *testing.T) {
 	p := Row{}
-	p.Mock(&heptane.RowRetrieve{Table: bogusTable, FieldValues: primaryFieldsValues}, errors.New("bogus"))
-	p.Mock(&heptane.RowRetrieve{Table: table, FieldValues: heptane.FieldValuesByName{}}, errors.New("bogus"))
-	p.Mock(&heptane.RowRetrieve{Table: table, FieldValues: primaryFieldsValues,
+	p.Mock(&r.RowRetrieve{Table: bogusTable, FieldValues: primaryFieldsValues}, errors.New("bogus"))
+	p.Mock(&r.RowRetrieve{Table: table, FieldValues: r.FieldValuesByName{}}, errors.New("bogus"))
+	p.Mock(&r.RowRetrieve{Table: table, FieldValues: primaryFieldsValues,
 		RetrievedValues: allFieldsValuesSlice}, errors.New("err"))
-	a := &heptane.RowRetrieve{Table: table, FieldValues: primaryFieldsValues}
+	a := &r.RowRetrieve{Table: table, FieldValues: primaryFieldsValues}
 	err := p.Access(a)
 	if err == nil {
 		t.Fatal(err)
@@ -178,22 +178,22 @@ func TestAccess_RefMocked_Retrieve(t *testing.T) {
 
 func TestAccess_Unmocked_RefUpdate(t *testing.T) {
 	p := Row{}
-	a := &heptane.RowUpdate{Table: table, FieldValues: allFieldsValues}
+	a := &r.RowUpdate{Table: table, FieldValues: allFieldsValues}
 	err := p.Access(a)
 	if err == nil {
 		t.Fatal(err)
 	}
-	if s := err.Error(); s != `Not Mocked: heptane.RowUpdate{Table:heptane.Table{Name:"table", PartitionKey:[]heptane.FieldName{"foo"}, PrimaryKey:[]heptane.FieldName{"foo", "bar"}, Values:[]heptane.FieldName{"baz"}, Types:heptane.FieldTypesByName{"bar":"string", "baz":"int", "foo":"string"}, PrimaryKeyCachePrefix:[]heptane.CacheKey{"table_pk", "0"}}, FieldValues:heptane.FieldValuesByName{"bar":"2", "baz":3, "foo":"1"}}` {
+	if s := err.Error(); s != `Not Mocked: heptane.RowUpdate{Table:heptane.Table{Name:"table", PartitionKey:[]heptane.FieldName{"foo"}, PrimaryKey:[]heptane.FieldName{"foo", "bar"}, Values:[]heptane.FieldName{"baz"}, Types:heptane.FieldTypesByName{"bar":"string", "baz":"string", "foo":"string"}, PrimaryKeyCachePrefix:[]string{"table_pk", "0"}}, FieldValues:heptane.FieldValuesByName{"bar":"2", "baz":3, "foo":"1"}}` {
 		t.Error(s)
 	}
 }
 
 func TestAccess_NormalMocked_NormalUpdate(t *testing.T) {
 	p := Row{}
-	p.Mock(heptane.RowUpdate{Table: bogusTable, FieldValues: allFieldsValues}, errors.New("bogus"))
-	p.Mock(heptane.RowUpdate{Table: table, FieldValues: heptane.FieldValuesByName{}}, errors.New("bogus"))
-	p.Mock(heptane.RowUpdate{Table: table, FieldValues: allFieldsValues}, errors.New("err"))
-	a := heptane.RowUpdate{Table: table, FieldValues: allFieldsValues}
+	p.Mock(r.RowUpdate{Table: bogusTable, FieldValues: allFieldsValues}, errors.New("bogus"))
+	p.Mock(r.RowUpdate{Table: table, FieldValues: r.FieldValuesByName{}}, errors.New("bogus"))
+	p.Mock(r.RowUpdate{Table: table, FieldValues: allFieldsValues}, errors.New("err"))
+	a := r.RowUpdate{Table: table, FieldValues: allFieldsValues}
 	err := p.Access(a)
 	if err == nil {
 		t.Fatal(err)
@@ -205,10 +205,10 @@ func TestAccess_NormalMocked_NormalUpdate(t *testing.T) {
 
 func TestAccess_RefMocked_NormalUpdate(t *testing.T) {
 	p := Row{}
-	p.Mock(&heptane.RowUpdate{Table: bogusTable, FieldValues: allFieldsValues}, errors.New("bogus"))
-	p.Mock(&heptane.RowUpdate{Table: table, FieldValues: heptane.FieldValuesByName{}}, errors.New("bogus"))
-	p.Mock(&heptane.RowUpdate{Table: table, FieldValues: allFieldsValues}, errors.New("err"))
-	a := heptane.RowUpdate{Table: table, FieldValues: allFieldsValues}
+	p.Mock(&r.RowUpdate{Table: bogusTable, FieldValues: allFieldsValues}, errors.New("bogus"))
+	p.Mock(&r.RowUpdate{Table: table, FieldValues: r.FieldValuesByName{}}, errors.New("bogus"))
+	p.Mock(&r.RowUpdate{Table: table, FieldValues: allFieldsValues}, errors.New("err"))
+	a := r.RowUpdate{Table: table, FieldValues: allFieldsValues}
 	err := p.Access(a)
 	if err == nil {
 		t.Fatal(err)
@@ -220,10 +220,10 @@ func TestAccess_RefMocked_NormalUpdate(t *testing.T) {
 
 func TestAccess_NormalMocked_RefUpdate(t *testing.T) {
 	p := Row{}
-	p.Mock(heptane.RowUpdate{Table: bogusTable, FieldValues: allFieldsValues}, errors.New("bogus"))
-	p.Mock(heptane.RowUpdate{Table: table, FieldValues: heptane.FieldValuesByName{}}, errors.New("bogus"))
-	p.Mock(heptane.RowUpdate{Table: table, FieldValues: allFieldsValues}, errors.New("err"))
-	a := &heptane.RowUpdate{Table: table, FieldValues: allFieldsValues}
+	p.Mock(r.RowUpdate{Table: bogusTable, FieldValues: allFieldsValues}, errors.New("bogus"))
+	p.Mock(r.RowUpdate{Table: table, FieldValues: r.FieldValuesByName{}}, errors.New("bogus"))
+	p.Mock(r.RowUpdate{Table: table, FieldValues: allFieldsValues}, errors.New("err"))
+	a := &r.RowUpdate{Table: table, FieldValues: allFieldsValues}
 	err := p.Access(a)
 	if err == nil {
 		t.Fatal(err)
@@ -235,10 +235,10 @@ func TestAccess_NormalMocked_RefUpdate(t *testing.T) {
 
 func TestAccess_RefMocked_RefUpdate(t *testing.T) {
 	p := Row{}
-	p.Mock(&heptane.RowUpdate{Table: bogusTable, FieldValues: allFieldsValues}, errors.New("bogus"))
-	p.Mock(&heptane.RowUpdate{Table: table, FieldValues: heptane.FieldValuesByName{}}, errors.New("bogus"))
-	p.Mock(&heptane.RowUpdate{Table: table, FieldValues: allFieldsValues}, errors.New("err"))
-	a := &heptane.RowUpdate{Table: table, FieldValues: allFieldsValues}
+	p.Mock(&r.RowUpdate{Table: bogusTable, FieldValues: allFieldsValues}, errors.New("bogus"))
+	p.Mock(&r.RowUpdate{Table: table, FieldValues: r.FieldValuesByName{}}, errors.New("bogus"))
+	p.Mock(&r.RowUpdate{Table: table, FieldValues: allFieldsValues}, errors.New("err"))
+	a := &r.RowUpdate{Table: table, FieldValues: allFieldsValues}
 	err := p.Access(a)
 	if err == nil {
 		t.Fatal(err)
@@ -250,22 +250,22 @@ func TestAccess_RefMocked_RefUpdate(t *testing.T) {
 
 func TestAccess_Unmocked_RefDelete(t *testing.T) {
 	p := Row{}
-	a := &heptane.RowDelete{Table: table, FieldValues: allFieldsValues}
+	a := &r.RowDelete{Table: table, FieldValues: allFieldsValues}
 	err := p.Access(a)
 	if err == nil {
 		t.Fatal(err)
 	}
-	if s := err.Error(); s != `Not Mocked: heptane.RowDelete{Table:heptane.Table{Name:"table", PartitionKey:[]heptane.FieldName{"foo"}, PrimaryKey:[]heptane.FieldName{"foo", "bar"}, Values:[]heptane.FieldName{"baz"}, Types:heptane.FieldTypesByName{"bar":"string", "baz":"int", "foo":"string"}, PrimaryKeyCachePrefix:[]heptane.CacheKey{"table_pk", "0"}}, FieldValues:heptane.FieldValuesByName{"bar":"2", "baz":3, "foo":"1"}}` {
+	if s := err.Error(); s != `Not Mocked: heptane.RowDelete{Table:heptane.Table{Name:"table", PartitionKey:[]heptane.FieldName{"foo"}, PrimaryKey:[]heptane.FieldName{"foo", "bar"}, Values:[]heptane.FieldName{"baz"}, Types:heptane.FieldTypesByName{"bar":"string", "baz":"string", "foo":"string"}, PrimaryKeyCachePrefix:[]string{"table_pk", "0"}}, FieldValues:heptane.FieldValuesByName{"bar":"2", "baz":3, "foo":"1"}}` {
 		t.Error(s)
 	}
 }
 
 func TestAccess_NormalMocked_NormalDelete(t *testing.T) {
 	p := Row{}
-	p.Mock(heptane.RowDelete{Table: bogusTable, FieldValues: allFieldsValues}, errors.New("bogus"))
-	p.Mock(heptane.RowDelete{Table: table, FieldValues: heptane.FieldValuesByName{}}, errors.New("bogus"))
-	p.Mock(heptane.RowDelete{Table: table, FieldValues: allFieldsValues}, errors.New("err"))
-	a := heptane.RowDelete{Table: table, FieldValues: allFieldsValues}
+	p.Mock(r.RowDelete{Table: bogusTable, FieldValues: allFieldsValues}, errors.New("bogus"))
+	p.Mock(r.RowDelete{Table: table, FieldValues: r.FieldValuesByName{}}, errors.New("bogus"))
+	p.Mock(r.RowDelete{Table: table, FieldValues: allFieldsValues}, errors.New("err"))
+	a := r.RowDelete{Table: table, FieldValues: allFieldsValues}
 	err := p.Access(a)
 	if err == nil {
 		t.Fatal(err)
@@ -277,10 +277,10 @@ func TestAccess_NormalMocked_NormalDelete(t *testing.T) {
 
 func TestAccess_RefMocked_NormalDelete(t *testing.T) {
 	p := Row{}
-	p.Mock(&heptane.RowDelete{Table: bogusTable, FieldValues: allFieldsValues}, errors.New("bogus"))
-	p.Mock(&heptane.RowDelete{Table: table, FieldValues: heptane.FieldValuesByName{}}, errors.New("bogus"))
-	p.Mock(&heptane.RowDelete{Table: table, FieldValues: allFieldsValues}, errors.New("err"))
-	a := heptane.RowDelete{Table: table, FieldValues: allFieldsValues}
+	p.Mock(&r.RowDelete{Table: bogusTable, FieldValues: allFieldsValues}, errors.New("bogus"))
+	p.Mock(&r.RowDelete{Table: table, FieldValues: r.FieldValuesByName{}}, errors.New("bogus"))
+	p.Mock(&r.RowDelete{Table: table, FieldValues: allFieldsValues}, errors.New("err"))
+	a := r.RowDelete{Table: table, FieldValues: allFieldsValues}
 	err := p.Access(a)
 	if err == nil {
 		t.Fatal(err)
@@ -292,10 +292,10 @@ func TestAccess_RefMocked_NormalDelete(t *testing.T) {
 
 func TestAccess_NormalMocked_RefDelete(t *testing.T) {
 	p := Row{}
-	p.Mock(heptane.RowDelete{Table: bogusTable, FieldValues: allFieldsValues}, errors.New("bogus"))
-	p.Mock(heptane.RowDelete{Table: table, FieldValues: heptane.FieldValuesByName{}}, errors.New("bogus"))
-	p.Mock(heptane.RowDelete{Table: table, FieldValues: allFieldsValues}, errors.New("err"))
-	a := &heptane.RowDelete{Table: table, FieldValues: allFieldsValues}
+	p.Mock(r.RowDelete{Table: bogusTable, FieldValues: allFieldsValues}, errors.New("bogus"))
+	p.Mock(r.RowDelete{Table: table, FieldValues: r.FieldValuesByName{}}, errors.New("bogus"))
+	p.Mock(r.RowDelete{Table: table, FieldValues: allFieldsValues}, errors.New("err"))
+	a := &r.RowDelete{Table: table, FieldValues: allFieldsValues}
 	err := p.Access(a)
 	if err == nil {
 		t.Fatal(err)
@@ -307,10 +307,10 @@ func TestAccess_NormalMocked_RefDelete(t *testing.T) {
 
 func TestAccess_RefMocked_RefDelete(t *testing.T) {
 	p := Row{}
-	p.Mock(&heptane.RowDelete{Table: bogusTable, FieldValues: allFieldsValues}, errors.New("bogus"))
-	p.Mock(&heptane.RowDelete{Table: table, FieldValues: heptane.FieldValuesByName{}}, errors.New("bogus"))
-	p.Mock(&heptane.RowDelete{Table: table, FieldValues: allFieldsValues}, errors.New("err"))
-	a := &heptane.RowDelete{Table: table, FieldValues: allFieldsValues}
+	p.Mock(&r.RowDelete{Table: bogusTable, FieldValues: allFieldsValues}, errors.New("bogus"))
+	p.Mock(&r.RowDelete{Table: table, FieldValues: r.FieldValuesByName{}}, errors.New("bogus"))
+	p.Mock(&r.RowDelete{Table: table, FieldValues: allFieldsValues}, errors.New("err"))
+	a := &r.RowDelete{Table: table, FieldValues: allFieldsValues}
 	err := p.Access(a)
 	if err == nil {
 		t.Fatal(err)
@@ -322,8 +322,8 @@ func TestAccess_RefMocked_RefDelete(t *testing.T) {
 
 func TestAccessSlice(t *testing.T) {
 	p := Row{}
-	a := heptane.RowCreate{Table: table, FieldValues: allFieldsValues}
-	errs := p.AccessSlice([]heptane.RowAccess{a})
+	a := r.RowCreate{Table: table, FieldValues: allFieldsValues}
+	errs := p.AccessSlice([]r.RowAccess{a})
 	if errs == nil {
 		t.Error(errs)
 	}
@@ -331,7 +331,7 @@ func TestAccessSlice(t *testing.T) {
 		t.Fatal(l)
 	}
 	err := errs[0]
-	if s := err.Error(); s != `Not Mocked: heptane.RowCreate{Table:heptane.Table{Name:"table", PartitionKey:[]heptane.FieldName{"foo"}, PrimaryKey:[]heptane.FieldName{"foo", "bar"}, Values:[]heptane.FieldName{"baz"}, Types:heptane.FieldTypesByName{"bar":"string", "baz":"int", "foo":"string"}, PrimaryKeyCachePrefix:[]heptane.CacheKey{"table_pk", "0"}}, FieldValues:heptane.FieldValuesByName{"bar":"2", "baz":3, "foo":"1"}}` {
+	if s := err.Error(); s != `Not Mocked: heptane.RowCreate{Table:heptane.Table{Name:"table", PartitionKey:[]heptane.FieldName{"foo"}, PrimaryKey:[]heptane.FieldName{"foo", "bar"}, Values:[]heptane.FieldName{"baz"}, Types:heptane.FieldTypesByName{"bar":"string", "baz":"string", "foo":"string"}, PrimaryKeyCachePrefix:[]string{"table_pk", "0"}}, FieldValues:heptane.FieldValuesByName{"bar":"2", "baz":3, "foo":"1"}}` {
 		t.Error(s)
 	}
 }
