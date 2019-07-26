@@ -24,6 +24,9 @@ func New() Heptane {
 }
 
 func (h *heptane) Register(t Table, rp RowProvider, cp CacheProvider) error {
+	if err := t.Validate(); err != nil {
+		return err
+	}
 	if rp == nil {
 		return NullRowProviderError{t.Name}
 	}
