@@ -31,15 +31,15 @@ RowAccesses
 RowThe type Access is the interface for all operations, and there is one struct
 for each operation: RowCreate, RowRetrieve, RowUpdate and RowDelete.
 
-RowCreate means an INSERT into the table. Full PrimaryKey and Values are
-mandatory.
+RowCreate means an INSERT into the table. Full PrimaryKey is mandatory, Values
+are optional, only given Values are inserted.
 
 RowRetrieve means a SELECT from the table of all Values. For the WHERE: full
-PartitionKey is mandatory, fields from the PrimaryKey are optional, fields from
-the Values are ignored.
+PartitionKey is mandatory, fields from the PrimaryKey are optional, Values are
+ignored.
 
-RowUpdate means an UPDATE of the table. Full PrimaryKey is mandatory, fields
-from the Values are optional.
+RowUpdate means an UPDATE of the table. Full PrimaryKey is mandatory, Values
+are optional, only given Values are updated.
 
 RowDelete means a DELETE from the table. Full PrimaryKey is mandatory.
 
