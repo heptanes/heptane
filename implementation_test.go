@@ -11,11 +11,12 @@ import (
 
 func TestingTable1() r.Table {
 	return r.Table{
-		Name:         "table1",
-		PartitionKey: []r.FieldName{"foo"},
-		PrimaryKey:   []r.FieldName{"foo", "bar"},
-		Values:       []r.FieldName{"baz"},
-		Types:        r.FieldTypesByName{"foo": "string", "bar": "string", "baz": "string"}, PrimaryKeyCachePrefix: []string{"table1_pk", "0"},
+		Name:                  "table1",
+		PartitionKey:          []r.FieldName{"foo"},
+		PrimaryKey:            []r.FieldName{"foo", "bar"},
+		Values:                []r.FieldName{"baz"},
+		Types:                 r.FieldTypesByName{"foo": "string", "bar": "string", "baz": "string"},
+		PrimaryKeyCachePrefix: []string{"table1_pk", "0"},
 	}
 }
 
